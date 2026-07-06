@@ -37,7 +37,7 @@ elif [[ "${VSCODE_ARCH}" == "arm64" ]]; then
 elif [[ "${VSCODE_ARCH}" == "ppc64le" ]]; then
   VSCODE_REMOTE_DEPENDENCIES_CONTAINER_NAME="vscodium/vscodium-linux-build-agent:focal-devtoolset-ppc64le"
   export VSCODE_SYSROOT_REPOSITORY='VSCodium/vscode-linux-build-agent'
-  export VSCODE_SYSROOT_VERSION='v20260706'
+  export VSCODE_SYSROOT_VERSION='20260706'
 elif [[ "${VSCODE_ARCH}" == "riscv64" ]]; then
   VSCODE_REMOTE_DEPENDENCIES_CONTAINER_NAME="vscodium/vscodium-linux-build-agent:focal-devtoolset-riscv64"
 
