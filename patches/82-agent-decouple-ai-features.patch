@@ -1,0 +1,126 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Alex Garcia <lex@ibm.com>
+Date: Tue, 18 Aug 2026 07:51:22 -0500
+Subject: agent host: ignore the disableAIFeatures setting
+
+`chat.disableAIFeatures` defaults to true in VSCodium, and the agent host enablement service required it to be off, so the Agents window never started a local agent host. Enablement now follows `chat.agentHost.enabled` alone, leaving the built-in Copilot UI hidden behind the setting as before.
+
+diff --git a/src/vs/platform/agentHost/browser/agentHostEnablementService.ts b/src/vs/platform/agentHost/browser/agentHostEnablementService.ts
+index d99cd5e46afc5d9531485e8750c3a82f6129d44d..998b79f3a487a44f25d8dae2140b4b7e4a596ebd 100644
+--- a/src/vs/platform/agentHost/browser/agentHostEnablementService.ts
++++ b/src/vs/platform/agentHost/browser/agentHostEnablementService.ts
+@@ -7,7 +7,6 @@ import { Disposable } from '../../../base/common/lifecycle.js';
+ import { IObservable, observableValue } from '../../../base/common/observable.js';
+ import { isWeb } from '../../../base/common/platform.js';
+ import { ConfigurationTarget, IConfigurationService } from '../../configuration/common/configuration.js';
+-import { ChatAIDisabledSettingId } from '../../chat/common/chatSettings.js';
+ import { IContextKey, IContextKeyService } from '../../contextkey/common/contextkey.js';
+ import { InstantiationType, registerSingleton } from '../../instantiation/common/extensions.js';
+ import { AGENT_HOST_ENABLED_CONTEXT_KEY, IAgentHostEnablementService } from '../common/agentHostEnablementService.js';
+@@ -37,10 +36,7 @@ export class AgentHostEnablementService extends Disposable implements IAgentHost
+ 		this._enabledContextKey.set(this.enabled.get());
+ 
+ 		this._register(configurationService.onDidChangeConfiguration(event => {
+-			if (
+-				(event.source === ConfigurationTarget.DEFAULT && event.affectsConfiguration(agentHostEnabledSettingId))
+-				|| event.affectsConfiguration(ChatAIDisabledSettingId)
+-			) {
++			if (event.source === ConfigurationTarget.DEFAULT && event.affectsConfiguration(agentHostEnabledSettingId)) {
+ 				this._updateEnabled(configurationService);
+ 			}
+ 		}));
+@@ -48,8 +44,7 @@ export class AgentHostEnablementService extends Disposable implements IAgentHost
+ 
+ 	private _readEnabled(configurationService: IConfigurationService): boolean {
+ 		return this._isAgentHostRuntimeAvailable
+-			&& (configurationService.getValue<boolean>(agentHostEnabledSettingId) ?? false)
+-			&& configurationService.getValue<boolean>(ChatAIDisabledSettingId) !== true;
++			&& (configurationService.getValue<boolean>(agentHostEnabledSettingId) ?? false);
+ 	}
+ 
+ 	private _updateEnabled(configurationService: IConfigurationService): void {
+diff --git a/src/vs/platform/agentHost/test/browser/agentHostEnablementService.test.ts b/src/vs/platform/agentHost/test/browser/agentHostEnablementService.test.ts
+index 4cf6af36629ee8ba626541fcc7b8c818379ff14e..36b36c41517075ce710becbd844799a0ee44fdd7 100644
+--- a/src/vs/platform/agentHost/test/browser/agentHostEnablementService.test.ts
++++ b/src/vs/platform/agentHost/test/browser/agentHostEnablementService.test.ts
+@@ -65,14 +65,14 @@ suite('AgentHostEnablementService', () => {
+ 		});
+ 	});
+ 
+-	test('is disabled when AI features are disabled', () => {
++	test('stays enabled when AI features are disabled', () => {
+ 		const { service, contextKeyService } = createService(true, true);
+ 		assert.deepStrictEqual({
+ 			enabled: service.enabled.get(),
+ 			contextKey: contextKeyService.getContextKeyValue(AGENT_HOST_ENABLED_CONTEXT_KEY.key),
+ 		}, {
+-			enabled: false,
+-			contextKey: false,
++			enabled: true,
++			contextKey: true,
+ 		});
+ 	});
+ 
+@@ -123,7 +123,7 @@ suite('AgentHostEnablementService', () => {
+ 		});
+ 	});
+ 
+-	test('does not enable from experiment while AI features are disabled', () => {
++	test('enables from experiment while AI features are disabled', () => {
+ 		const { service, configurationService, contextKeyService } = createService(false, true);
+ 		const changes: boolean[] = [];
+ 		disposables.add(autorun(reader => changes.push(service.enabled.read(reader))));
+@@ -135,18 +135,18 @@ suite('AgentHostEnablementService', () => {
+ 			contextKey: contextKeyService.getContextKeyValue(AGENT_HOST_ENABLED_CONTEXT_KEY.key),
+ 			changes,
+ 		}, {
+-			enabled: false,
+-			contextKey: false,
+-			changes: [false],
++			enabled: true,
++			contextKey: true,
++			changes: [false, true],
+ 		});
+ 	});
+ 
+-	test('can enable when AI features are re-enabled', () => {
+-		const { service, configurationService, contextKeyService } = createService(true, true);
++	test('stays enabled when AI features are disabled at runtime', () => {
++		const { service, configurationService, contextKeyService } = createService(true);
+ 		const changes: boolean[] = [];
+ 		disposables.add(autorun(reader => changes.push(service.enabled.read(reader))));
+ 
+-		configurationService.setValue(ChatAIDisabledSettingId, false, ConfigurationTarget.USER);
++		configurationService.setValue(ChatAIDisabledSettingId, true, ConfigurationTarget.USER);
+ 
+ 		assert.deepStrictEqual({
+ 			enabled: service.enabled.get(),
+@@ -155,7 +155,7 @@ suite('AgentHostEnablementService', () => {
+ 		}, {
+ 			enabled: true,
+ 			contextKey: true,
+-			changes: [false, true],
++			changes: [true],
+ 		});
+ 	});
+ 
+diff --git a/src/vs/workbench/services/agentHost/test/browser/webAgentHostEnablementService.test.ts b/src/vs/workbench/services/agentHost/test/browser/webAgentHostEnablementService.test.ts
+index 91d75fe0a2338335e109db137f19d3610c4166dc..88e4a24fcb736a7db45e712e48a6f15269afb024 100644
+--- a/src/vs/workbench/services/agentHost/test/browser/webAgentHostEnablementService.test.ts
++++ b/src/vs/workbench/services/agentHost/test/browser/webAgentHostEnablementService.test.ts
+@@ -57,13 +57,13 @@ suite('WebAgentHostEnablementService', () => {
+ 		});
+ 	});
+ 
+-	test('respects configuration and AI disablement in web with a remote extension host', () => {
++	test('respects configuration but not AI disablement in web with a remote extension host', () => {
+ 		assert.deepStrictEqual({
+ 			configuredOff: getEnablement({ remoteAuthority: 'ssh-remote+test', configured: false }),
+ 			aiDisabled: getEnablement({ remoteAuthority: 'ssh-remote+test', aiDisabled: true }),
+ 		}, {
+ 			configuredOff: { enabled: false, contextKey: false },
+-			aiDisabled: { enabled: false, contextKey: false },
++			aiDisabled: { enabled: true, contextKey: true },
+ 		});
+ 	});
+ });
