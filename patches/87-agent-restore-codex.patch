@@ -1,0 +1,730 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Alex Garcia <lex@ibm.com>
+Date: Tue, 18 Aug 2026 07:51:35 -0500
+Subject: agent host: restore the codex agent without its copilot proxy
+
+`CodexAgent` supports an `openai` usage source alongside the Copilot-CAPI one, so it is pinned to that and runs `codex` on the user's own OpenAI credentials. The Copilot-CAPI model catalogue, the proxy handle threaded through the app-server connection and the sign-out fallback to Copilot go with the proxy; models come from the app-server's own `model/list`. `@openai/codex` returns as a devDependency, and registration stays upstream's register-on-enable so codex is off unless `chat.agentHost.codexAgent.enabled` is set.
+
+diff --git a/package-lock.json b/package-lock.json
+index 9ecf53cd37d048c8ecb838742bd1846d2a5a9b1e..62235219e95e624979a572b17690e50f50ad8d93 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -10,6 +10,7 @@
+       "hasInstallScript": true,
+       "license": "MIT",
+       "dependencies": {
++        "@anthropic-ai/sdk": "^0.82.0",
+         "@microsoft/1ds-core-js": "^3.2.13",
+         "@microsoft/1ds-post-js": "^3.2.13",
+         "@microsoft/dev-tunnels-connections": "^1.3.41",
+@@ -77,6 +78,8 @@
+         "zod": "^3.25.76"
+       },
+       "devDependencies": {
++        "@anthropic-ai/claude-agent-sdk": "0.3.220",
++        "@openai/codex": "0.142.0",
+         "@playwright/cli": "^0.1.9",
+         "@playwright/test": "^1.61.1",
+         "@stylistic/eslint-plugin-ts": "^2.8.0",
+@@ -184,6 +187,175 @@
+         "windows-foreground-love": "0.6.1"
+       }
+     },
++    "node_modules/@anthropic-ai/claude-agent-sdk": {
++      "version": "0.3.220",
++      "resolved": "https://registry.npmjs.org/@anthropic-ai/claude-agent-sdk/-/claude-agent-sdk-0.3.220.tgz",
++      "integrity": "sha512-glc7SdwPkOkLw8oxwLo9PKTdLJGqW/PIR4urWXFoRtX9YllwozsEVc5Tc1+EvLSkfrsxPJqQWqOgpjUOQXf1oA==",
++      "dev": true,
++      "license": "SEE LICENSE IN README.md",
++      "engines": {
++        "node": ">=18.0.0"
++      },
++      "optionalDependencies": {
++        "@anthropic-ai/claude-agent-sdk-darwin-arm64": "0.3.220",
++        "@anthropic-ai/claude-agent-sdk-darwin-x64": "0.3.220",
++        "@anthropic-ai/claude-agent-sdk-linux-arm64": "0.3.220",
++        "@anthropic-ai/claude-agent-sdk-linux-arm64-musl": "0.3.220",
++        "@anthropic-ai/claude-agent-sdk-linux-x64": "0.3.220",
++        "@anthropic-ai/claude-agent-sdk-linux-x64-musl": "0.3.220",
++        "@anthropic-ai/claude-agent-sdk-win32-arm64": "0.3.220",
++        "@anthropic-ai/claude-agent-sdk-win32-x64": "0.3.220"
++      },
++      "peerDependencies": {
++        "@anthropic-ai/sdk": ">=0.93.0",
++        "@modelcontextprotocol/sdk": "^1.29.0",
++        "zod": "^4.0.0"
++      }
++    },
++    "node_modules/@anthropic-ai/claude-agent-sdk-darwin-arm64": {
++      "version": "0.3.220",
++      "resolved": "https://registry.npmjs.org/@anthropic-ai/claude-agent-sdk-darwin-arm64/-/claude-agent-sdk-darwin-arm64-0.3.220.tgz",
++      "integrity": "sha512-7VxlbEosK7DODiOnsjoVd0DSJzbnaPrM2jelMHI0y8zx1UnLS3WC6EFUXbvy74F2sXqEznh2tzn7EKWInaRN6Q==",
++      "cpu": [
++        "arm64"
++      ],
++      "dev": true,
++      "license": "SEE LICENSE IN LICENSE.md",
++      "optional": true,
++      "os": [
++        "darwin"
++      ]
++    },
++    "node_modules/@anthropic-ai/claude-agent-sdk-darwin-x64": {
++      "version": "0.3.220",
++      "resolved": "https://registry.npmjs.org/@anthropic-ai/claude-agent-sdk-darwin-x64/-/claude-agent-sdk-darwin-x64-0.3.220.tgz",
++      "integrity": "sha512-X9RwDsSmbF6ultKZroaip+DL8WRgC64gHbrAwrRlAFSPNZV7zmJyP2ur8rW7KrxqmtuehdMMkw8+SAC/6hD2PA==",
++      "cpu": [
++        "x64"
++      ],
++      "dev": true,
++      "license": "SEE LICENSE IN LICENSE.md",
++      "optional": true,
++      "os": [
++        "darwin"
++      ]
++    },
++    "node_modules/@anthropic-ai/claude-agent-sdk-linux-arm64": {
++      "version": "0.3.220",
++      "resolved": "https://registry.npmjs.org/@anthropic-ai/claude-agent-sdk-linux-arm64/-/claude-agent-sdk-linux-arm64-0.3.220.tgz",
++      "integrity": "sha512-WkROPwWskqhKR9XgnmseHQ6rLi9zM9qt57IWoToIjL/eXOqDWipp7JXZ1L5ud+LrA42dunHPZfBwD/vXZ+A7LA==",
++      "cpu": [
++        "arm64"
++      ],
++      "dev": true,
++      "libc": [
++        "glibc"
++      ],
++      "license": "SEE LICENSE IN LICENSE.md",
++      "optional": true,
++      "os": [
++        "linux"
++      ]
++    },
++    "node_modules/@anthropic-ai/claude-agent-sdk-linux-arm64-musl": {
++      "version": "0.3.220",
++      "resolved": "https://registry.npmjs.org/@anthropic-ai/claude-agent-sdk-linux-arm64-musl/-/claude-agent-sdk-linux-arm64-musl-0.3.220.tgz",
++      "integrity": "sha512-OHoZOZ8Cf2TBr6oXIXPwyvUxj9jrq2w8E4poA8dMpacXszcPSPiCQCMuuOh4aWJzfeJE1+TtWxhKMVb2csXyZQ==",
++      "cpu": [
++        "arm64"
++      ],
++      "dev": true,
++      "libc": [
++        "musl"
++      ],
++      "license": "SEE LICENSE IN LICENSE.md",
++      "optional": true,
++      "os": [
++        "linux"
++      ]
++    },
++    "node_modules/@anthropic-ai/claude-agent-sdk-linux-x64": {
++      "version": "0.3.220",
++      "resolved": "https://registry.npmjs.org/@anthropic-ai/claude-agent-sdk-linux-x64/-/claude-agent-sdk-linux-x64-0.3.220.tgz",
++      "integrity": "sha512-tkTJFnpR9VifvWX2fmkCAPkT6+8Wk/gVu8B5jsVekKZPiZoWRHmMXO30BnZn+f0TZhgYP+82PSX3S8crH1kn+w==",
++      "cpu": [
++        "x64"
++      ],
++      "dev": true,
++      "libc": [
++        "glibc"
++      ],
++      "license": "SEE LICENSE IN LICENSE.md",
++      "optional": true,
++      "os": [
++        "linux"
++      ]
++    },
++    "node_modules/@anthropic-ai/claude-agent-sdk-linux-x64-musl": {
++      "version": "0.3.220",
++      "resolved": "https://registry.npmjs.org/@anthropic-ai/claude-agent-sdk-linux-x64-musl/-/claude-agent-sdk-linux-x64-musl-0.3.220.tgz",
++      "integrity": "sha512-K+FWj+LcGhC1Z7wqeWoLxm1iemcba5xKpLLFVwYm4V6HyMx3ruYd/2r2TiQtjT+JWeNFWIys0ScHiItR6vWAiA==",
++      "cpu": [
++        "x64"
++      ],
++      "dev": true,
++      "libc": [
++        "musl"
++      ],
++      "license": "SEE LICENSE IN LICENSE.md",
++      "optional": true,
++      "os": [
++        "linux"
++      ]
++    },
++    "node_modules/@anthropic-ai/claude-agent-sdk-win32-arm64": {
++      "version": "0.3.220",
++      "resolved": "https://registry.npmjs.org/@anthropic-ai/claude-agent-sdk-win32-arm64/-/claude-agent-sdk-win32-arm64-0.3.220.tgz",
++      "integrity": "sha512-rIwgq0UwQExWl6KrHUyC4w5KwpL9l6nd95aUTx6RitexaAuEw//xtfTVLnuE4hDDQZFkzEwpdKc3nxDWoGcUbA==",
++      "cpu": [
++        "arm64"
++      ],
++      "dev": true,
++      "license": "SEE LICENSE IN LICENSE.md",
++      "optional": true,
++      "os": [
++        "win32"
++      ]
++    },
++    "node_modules/@anthropic-ai/claude-agent-sdk-win32-x64": {
++      "version": "0.3.220",
++      "resolved": "https://registry.npmjs.org/@anthropic-ai/claude-agent-sdk-win32-x64/-/claude-agent-sdk-win32-x64-0.3.220.tgz",
++      "integrity": "sha512-MuOuXhbr66HlGaWXD2f3w0k2PsvmnbkwcUZ0dAe2poFLdl72GC2dapwwOBefxm9QmoNqk9+jmv/dSKGOVWyvLw==",
++      "cpu": [
++        "x64"
++      ],
++      "dev": true,
++      "license": "SEE LICENSE IN LICENSE.md",
++      "optional": true,
++      "os": [
++        "win32"
++      ]
++    },
++    "node_modules/@anthropic-ai/sdk": {
++      "version": "0.82.0",
++      "resolved": "https://registry.npmjs.org/@anthropic-ai/sdk/-/sdk-0.82.0.tgz",
++      "integrity": "sha512-xdHTjL1GlUlDugHq/I47qdOKp/ROPvuHl7ROJCgUQigbvPu7asf9KcAcU1EqdrP2LuVhEKaTs7Z+ShpZDRzHdQ==",
++      "license": "MIT",
++      "dependencies": {
++        "json-schema-to-ts": "^3.1.1"
++      },
++      "bin": {
++        "anthropic-ai-sdk": "bin/cli"
++      },
++      "peerDependencies": {
++        "zod": "^3.25.0 || ^4.0.0"
++      },
++      "peerDependenciesMeta": {
++        "zod": {
++          "optional": true
++        }
++      }
++    },
+     "node_modules/@azure-rest/ai-translation-text": {
+       "version": "1.0.0-beta.1",
+       "resolved": "https://registry.npmjs.org/@azure-rest/ai-translation-text/-/ai-translation-text-1.0.0-beta.1.tgz",
+@@ -691,6 +863,15 @@
+         "node": ">=6.0.0"
+       }
+     },
++    "node_modules/@babel/runtime": {
++      "version": "7.29.7",
++      "resolved": "https://registry.npmjs.org/@babel/runtime/-/runtime-7.29.7.tgz",
++      "integrity": "sha512-Nq8OhGWiZIZGV6hLHoyAKLLcJihP/xFeBMGJoUrxTX2psI8dCifzLhZISFb+VWS3wFMRDmCGw5R+dOySCqPLhw==",
++      "license": "MIT",
++      "engines": {
++        "node": ">=6.9.0"
++      }
++    },
+     "node_modules/@babel/template": {
+       "version": "7.29.7",
+       "resolved": "https://registry.npmjs.org/@babel/template/-/template-7.29.7.tgz",
+@@ -1869,6 +2050,135 @@
+         "@octokit/openapi-types": "^25.1.0"
+       }
+     },
++    "node_modules/@openai/codex": {
++      "version": "0.142.0",
++      "resolved": "https://registry.npmjs.org/@openai/codex/-/codex-0.142.0.tgz",
++      "integrity": "sha512-c7WftbRyE4zOLJV5p73mcGn4jVK3FmK84Q65hrZrXboZzLPDWRfbFedCbsIjU4PJS/kvgyMPhv7dH4/nhXzUyg==",
++      "dev": true,
++      "license": "Apache-2.0",
++      "bin": {
++        "codex": "bin/codex.js"
++      },
++      "engines": {
++        "node": ">=16"
++      },
++      "optionalDependencies": {
++        "@openai/codex-darwin-arm64": "npm:@openai/codex@0.142.0-darwin-arm64",
++        "@openai/codex-darwin-x64": "npm:@openai/codex@0.142.0-darwin-x64",
++        "@openai/codex-linux-arm64": "npm:@openai/codex@0.142.0-linux-arm64",
++        "@openai/codex-linux-x64": "npm:@openai/codex@0.142.0-linux-x64",
++        "@openai/codex-win32-arm64": "npm:@openai/codex@0.142.0-win32-arm64",
++        "@openai/codex-win32-x64": "npm:@openai/codex@0.142.0-win32-x64"
++      }
++    },
++    "node_modules/@openai/codex-darwin-arm64": {
++      "name": "@openai/codex",
++      "version": "0.142.0-darwin-arm64",
++      "resolved": "https://registry.npmjs.org/@openai/codex/-/codex-0.142.0-darwin-arm64.tgz",
++      "integrity": "sha512-jwbriCRTSNfqoGov5bNnnYAKarnNv4QfGkut8psKAajebL6VPI2ZjCxCJ1OFA5HhUQsN8GQgEjKlj6WhYcMmUA==",
++      "cpu": [
++        "arm64"
++      ],
++      "dev": true,
++      "license": "Apache-2.0",
++      "optional": true,
++      "os": [
++        "darwin"
++      ],
++      "engines": {
++        "node": ">=16"
++      }
++    },
++    "node_modules/@openai/codex-darwin-x64": {
++      "name": "@openai/codex",
++      "version": "0.142.0-darwin-x64",
++      "resolved": "https://registry.npmjs.org/@openai/codex/-/codex-0.142.0-darwin-x64.tgz",
++      "integrity": "sha512-qwdPfW8sOBEfWw1Rt7baveUsOjrudrM7qfKNnJvHPRrwtt4jemTd22VtZ6r02kUQdLwt6Ddvs0Pwzk6QJW6PqA==",
++      "cpu": [
++        "x64"
++      ],
++      "dev": true,
++      "license": "Apache-2.0",
++      "optional": true,
++      "os": [
++        "darwin"
++      ],
++      "engines": {
++        "node": ">=16"
++      }
++    },
++    "node_modules/@openai/codex-linux-arm64": {
++      "name": "@openai/codex",
++      "version": "0.142.0-linux-arm64",
++      "resolved": "https://registry.npmjs.org/@openai/codex/-/codex-0.142.0-linux-arm64.tgz",
++      "integrity": "sha512-gX9hCK59bE0Itnous1MCrKiXTYuoGVE6oJUE0kyRSzaBD267sh9TNR3DXKbY7TsP7iAs19n8YXDJNdHZJtakSQ==",
++      "cpu": [
++        "arm64"
++      ],
++      "dev": true,
++      "license": "Apache-2.0",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">=16"
++      }
++    },
++    "node_modules/@openai/codex-linux-x64": {
++      "name": "@openai/codex",
++      "version": "0.142.0-linux-x64",
++      "resolved": "https://registry.npmjs.org/@openai/codex/-/codex-0.142.0-linux-x64.tgz",
++      "integrity": "sha512-nywS+ogFPRhZnQnKL+jzWKzFhmjTQbYPh6n8dtQ/E+sJ3FoZVcb9a6kvHL5yjgtlCiDkP0jPDYY5AK3tDShYyw==",
++      "cpu": [
++        "x64"
++      ],
++      "dev": true,
++      "license": "Apache-2.0",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">=16"
++      }
++    },
++    "node_modules/@openai/codex-win32-arm64": {
++      "name": "@openai/codex",
++      "version": "0.142.0-win32-arm64",
++      "resolved": "https://registry.npmjs.org/@openai/codex/-/codex-0.142.0-win32-arm64.tgz",
++      "integrity": "sha512-Lz8xEn7uNn0XTi8k0jApKM5P9BD7QvAH3ZbtlGi1zfSOgh1kmgpfXxaTlJF503mozdHaA2r6UA7hfTi+bI0CvQ==",
++      "cpu": [
++        "arm64"
++      ],
++      "dev": true,
++      "license": "Apache-2.0",
++      "optional": true,
++      "os": [
++        "win32"
++      ],
++      "engines": {
++        "node": ">=16"
++      }
++    },
++    "node_modules/@openai/codex-win32-x64": {
++      "name": "@openai/codex",
++      "version": "0.142.0-win32-x64",
++      "resolved": "https://registry.npmjs.org/@openai/codex/-/codex-0.142.0-win32-x64.tgz",
++      "integrity": "sha512-LkARkXh3NM0XA8R8hFAgjx017fadfb9RgmqLzdhO1Qt/bDVSJnmDf4cwJ2h+FWZcm9/rRk3JC/IuqBvwg/TN+Q==",
++      "cpu": [
++        "x64"
++      ],
++      "dev": true,
++      "license": "Apache-2.0",
++      "optional": true,
++      "os": [
++        "win32"
++      ],
++      "engines": {
++        "node": ">=16"
++      }
++    },
+     "node_modules/@opentelemetry/api": {
+       "version": "1.0.3",
+       "resolved": "https://registry.npmjs.org/@opentelemetry/api/-/api-1.0.3.tgz",
+@@ -12643,6 +12953,19 @@
+       "integrity": "sha512-4bV5BfR2mqfQTJm+V5tPPdf+ZpuhiIvTuAB5g8kcrXOZpTT/QwwVRWBywX1ozr6lEuPdbHxwaJlm9G6mI2sfSQ==",
+       "dev": true
+     },
++    "node_modules/json-schema-to-ts": {
++      "version": "3.1.1",
++      "resolved": "https://registry.npmjs.org/json-schema-to-ts/-/json-schema-to-ts-3.1.1.tgz",
++      "integrity": "sha512-+DWg8jCJG2TEnpy7kOm/7/AxaYoaRbjVB4LFZLySZlWn8exGs3A4OLJR966cVvU26N7X9TWxl+Jsw7dzAqKT6g==",
++      "license": "MIT",
++      "dependencies": {
++        "@babel/runtime": "^7.18.3",
++        "ts-algebra": "^2.0.0"
++      },
++      "engines": {
++        "node": ">=16"
++      }
++    },
+     "node_modules/json-schema-traverse": {
+       "version": "0.4.1",
+       "resolved": "https://registry.npmjs.org/json-schema-traverse/-/json-schema-traverse-0.4.1.tgz",
+@@ -18466,6 +18789,12 @@
+         "tree-kill": "cli.js"
+       }
+     },
++    "node_modules/ts-algebra": {
++      "version": "2.0.0",
++      "resolved": "https://registry.npmjs.org/ts-algebra/-/ts-algebra-2.0.0.tgz",
++      "integrity": "sha512-FPAhNPFMrkwz76P7cdjdmiShwMynZYN6SgOujD1urY4oNm80Ou9oMdmbR45LotcKOXoy7wSmHkRFE6Mxbrhefw==",
++      "license": "MIT"
++    },
+     "node_modules/ts-api-utils": {
+       "version": "2.1.0",
+       "resolved": "https://registry.npmjs.org/ts-api-utils/-/ts-api-utils-2.1.0.tgz",
+diff --git a/package.json b/package.json
+index ff1197135e4302fd36cdd2629edc8e544bc1ae99..6577fad1d2bb94df821c835c81c8beb3aec50d88 100644
+--- a/package.json
++++ b/package.json
+@@ -157,6 +157,7 @@
+   },
+   "devDependencies": {
+     "@anthropic-ai/claude-agent-sdk": "0.3.220",
++    "@openai/codex": "0.142.0",
+     "@playwright/cli": "^0.1.9",
+     "@playwright/test": "^1.61.1",
+     "@stylistic/eslint-plugin-ts": "^2.8.0",
+diff --git a/src/vs/platform/agentHost/node/agentHostMain.ts b/src/vs/platform/agentHost/node/agentHostMain.ts
+index 4e2d447a78ad8cac7bbe36e5c7d8c09e57a4c151..cc8582dedec446e6f44ca1ae75479dacc0fa024e 100644
+--- a/src/vs/platform/agentHost/node/agentHostMain.ts
++++ b/src/vs/platform/agentHost/node/agentHostMain.ts
+@@ -15,8 +15,10 @@ import { URI } from '../../../base/common/uri.js';
+ import { generateUuid } from '../../../base/common/uuid.js';
+ import * as os from 'os';
+ import * as inspector from 'inspector';
+-import { AgentHostByokModelsEnabledEnvVar, AgentHostClaudeAgentEnabledEnvVar, AgentHostIpcChannels, AgentHostMockAgentEnabledEnvVar, IAgentHostInspectInfo, IAgentHostSocketInfo, IAgentService, IConnectionTrackerService, isAgentEnabled } from '../common/agentService.js';
++import { AgentHostByokModelsEnabledEnvVar, AgentHostClaudeAgentEnabledEnvVar, AgentHostCodexAgentEnabledEnvVar, AgentHostIpcChannels, AgentHostMockAgentEnabledEnvVar, IAgentHostInspectInfo, IAgentHostSocketInfo, IAgentService, IConnectionTrackerService, isAgentEnabled } from '../common/agentService.js';
++import { AgentHostCodexEnabledConfigKey, platformRootSchema } from '../common/agentHostSchema.js';
+ import { ClaudeAgent } from './claude/claudeAgent.js';
++import { CodexAgent, CodexSdkPackage } from './codex/codexAgent.js';
+ import { ClaudeAgentSdkService, ClaudeSdkPackage, IClaudeAgentSdkService } from './claude/claudeAgentSdkService.js';
+ import { AgentService } from './agentService.js';
+ import { IAgentHostStateManager } from './agentHostStateManager.js';
+@@ -206,6 +208,26 @@ async function startAgentHost(): Promise<void> {
+ 		if (isAgentEnabled(process.env[AgentHostClaudeAgentEnabledEnvVar], true) && (!environmentService.isBuilt || agentSdkDownloader.isAvailable(ClaudeSdkPackage))) {
+ 			agentService.registerProvider(instantiationService.createInstance(ClaudeAgent));
+ 		}
++		// Codex registration is one-way (register-on-enable): the env-var toggle
++		// or the renderer-forwarded `codexAgentEnabled` root config enables it.
++		// Disabling requires an agent host restart.
++		if (!environmentService.isBuilt || agentSdkDownloader.isAvailable(CodexSdkPackage)) {
++			const agentConfigurationService = agentService.configurationService;
++			let codexRegistered = false;
++			const registerCodexIfEnabled = () => {
++				if (codexRegistered) {
++					return;
++				}
++				const enabledByEnv = isAgentEnabled(process.env[AgentHostCodexAgentEnabledEnvVar], false);
++				const enabledByRootConfig = agentConfigurationService.getRootValue(platformRootSchema, AgentHostCodexEnabledConfigKey) === true;
++				if (enabledByEnv || enabledByRootConfig) {
++					codexRegistered = true;
++					agentService.registerProvider(instantiationService.createInstance(CodexAgent));
++				}
++			};
++			registerCodexIfEnabled();
++			disposables.add(agentConfigurationService.onDidRootConfigChange(() => registerCodexIfEnabled()));
++		}
+ 	} catch (err) {
+ 		logService.error('Failed to create AgentService', err);
+ 		throw err;
+diff --git a/src/vs/platform/agentHost/node/codex/codexAgent.ts b/src/vs/platform/agentHost/node/codex/codexAgent.ts
+index 417845d5bea06e4ed4a9a84eb09b307e13b6de70..074dd7501de7f878dd9903dd6c4c4c9d9d1147da 100644
+--- a/src/vs/platform/agentHost/node/codex/codexAgent.ts
++++ b/src/vs/platform/agentHost/node/codex/codexAgent.ts
+@@ -20,10 +20,8 @@ import { generateUuid } from '../../../../base/common/uuid.js';
+ import { IInstantiationService } from '../../../instantiation/common/instantiation.js';
+ import { localize } from '../../../../nls.js';
+ import { ILogService } from '../../../log/common/log.js';
+-import { IProductService } from '../../../product/common/productService.js';
+ import { createSchema, platformRootSchema, platformSessionSchema, schemaProperty, AgentHostCodexMultiRootEnabledConfigKey, AgentHostMcpServersConfigKey, type ISchemaProperty, type SessionMode } from '../../common/agentHostSchema.js';
+-import { createPricingMetaFromBilling, normalizeCAPIBilling } from '../../common/agentModelPricing.js';
+-import { AgentHostConfigKey, agentHostCustomizationConfigSchema, type CodexUsageSource } from '../../common/agentHostCustomizationConfig.js';
++import { type CodexUsageSource } from '../../common/agentHostCustomizationConfig.js';
+ import { getReasoningEffortDescription, getReasoningEffortLabel } from '../../common/reasoningEffort.js';
+ import { AgentHostCodexAgentBinaryArgsEnvVar, AgentHostCodexAgentCodexHomeEnvVar, AgentHostCodexAgentSdkRootEnvVar, AgentSession, AgentSignal, CODEX_AGENT_PROVIDER_ID, IActiveClient, IAgent, IAgentChats, IAgentCreateChatForkSource, IAgentCreateChatResult, IAgentCreateChatOptions, IAgentCreateSessionConfig, IAgentCreateSessionResult, IAgentDescriptor, IAgentMaterializeSessionEvent, IAgentModelInfo, IAgentResolveSessionConfigParams, IAgentSessionConfigCompletionsParams, IAgentSessionMetadata, IMcpNotification, type AgentProvider, type AuthenticateParams } from '../../common/agentService.js';
+ import { SessionConfigKey } from '../../common/sessionConfigKeys.js';
+@@ -32,7 +30,7 @@ import { ActionType, isChatAction, type SessionAction, type ChatAction } from '.
+ import type { ConfigSchema, ModelSelection, ProtectedResourceMetadata, ToolDefinition, AgentSelection } from '../../common/state/protocol/state.js';
+ import type { ResolveSessionConfigResult, SessionConfigCompletionsResult } from '../../common/state/protocol/commands.js';
+ import { AuthRequiredReason, type AuthRequiredParams } from '../../common/state/protocol/common/notifications.js';
+-import { buildDefaultChatUri, parseChatUri, type ClientPluginCustomization, type DirectoryCustomization, type MessageAttachment, type PendingMessage, type ChatInputAnswer, ChatInputResponseKind, type PolicyState, type ToolCallResult, ToolResultContentType, type Turn, ResponsePartKind } from '../../common/state/sessionState.js';
++import { buildDefaultChatUri, parseChatUri, type ClientPluginCustomization, type DirectoryCustomization, type MessageAttachment, type PendingMessage, type ChatInputAnswer, ChatInputResponseKind, type ToolCallResult, ToolResultContentType, type Turn, ResponsePartKind } from '../../common/state/sessionState.js';
+ import type { IAgentServerToolHost } from '../../common/agentServerTools.js';
+ import { ActiveClientToolSet } from '../activeClientState.js';
+ import { McpCustomizationController } from '../shared/mcpCustomizationController.js';
+@@ -47,13 +45,11 @@ import { INativeEnvironmentService } from '../../../environment/common/environme
+ import { IAgentPluginManager, type ISyncedCustomization } from '../../common/agentPluginManager.js';
+ import { parsePlugin } from '../../../agentPlugins/common/pluginParsers.js';
+ import { IAgentHostGitHubEndpointService } from '../agentHostGitHubEndpointService.js';
+-import { ICopilotApiService } from '../shared/copilotApiService.js';
+ import { extractForwardedErrorInfo } from '../shared/forwardedChatError.js';
+ import { IAgentSdkDownloader, IAgentSdkPackage } from '../agentSdkDownloader.js';
+ import { CancellationToken } from '../../../../base/common/cancellation.js';
+ import { PendingRequestRegistry } from '../../common/pendingRequestRegistry.js';
+ import { CodexAppServerClient, JsonRpcError, transportFromChildProcess, type ICodexAppServerClient, type ServerRequestHandlerResult } from './codexAppServerClient.js';
+-import { ICodexProxyService, type ICodexProxyHandle } from './codexProxyService.js';
+ import { createCodexSessionMapState, extractUserInputText, mapAgentMessageDelta, mapCommandExecutionOutputDelta, mapFileChangeOutputDelta, mapFileChangePatchUpdated, mapItemCompleted, mapItemStarted, mapMcpToolCallProgress, mapReasoningSummaryPartAdded, mapReasoningSummaryTextDelta, mapReasoningTextDelta, mapTokenUsageUpdated, mapTurnCompleted, mapTurnStarted, resetCodexTurnMapState, type ICodexSessionMapState } from './codexMapAppServerEvents.js';
+ import { unwrapShellInvocation } from './codexShellCommand.js';
+ import { planForkedTurnIdMap, resolveForkBoundary } from './codexForkPlan.js';
+@@ -62,7 +58,7 @@ import { buildUserInputRequest, emptyUserInputResponse, userInputResponseFromAns
+ import { replayThreadToTurns } from './codexReplayMapper.js';
+ import { CodexSessionMetadataStore } from './codexSessionMetadataStore.js';
+ import { buildCodexLaunchConfig, buildCodexResumeParams, isCodexThreadProviderCompatible } from './codexLaunchConfig.js';
+-import { codexAccountStateForUsageSource, codexAccountStateFromResponse, codexProtectedResourcesForUsageSource, resolveCodexUsageSourceAfterAccountRead, type ICodexAccountState } from './codexAccountState.js';
++import { codexAccountStateForUsageSource, codexAccountStateFromResponse, codexProtectedResourcesForUsageSource, type ICodexAccountState } from './codexAccountState.js';
+ import { CodexSessionConfigKey, CODEX_DEFAULT_PERMISSIONS_PRESET, CODEX_PERMISSIONS_PRESETS, collaborationModeKind, migrateCodexPermissionValues, narrowAdditionalDirectories, narrowBoolean, narrowPersonality, narrowReasoningEffort, narrowReasoningSummary, narrowWebSearchMode, resolveCodexPermissions, type CodexApprovalPolicy, type CodexPermissionsPreset, type ICodexResolvedPermissions } from './codexSessionConfigKeys.js';
+ import type { ReasoningEffort } from './protocol/generated/ReasoningEffort.js';
+ import type { ReasoningSummary } from './protocol/generated/ReasoningSummary.js';
+@@ -126,14 +122,6 @@ const CLIENT_INFO = {
+ 
+ const CODEX_THINKING_LEVEL_KEY = 'thinkingLevel';
+ 
+-/**
+- * User-agent prefix applied to the Codex agent's outbound CAPI calls (e.g. the
+- * model-list fetch) so the traffic is identifiable server-side. Mirrors
+- * `claudeAgent.ts` and the `vscode_codex` prefix used by `codexProxyService.ts`
+- * and `oaiLanguageModelServer.ts`.
+- */
+-const USER_AGENT_PREFIX = 'vscode_codex';
+-
+ const CODEX_REASONING_EFFORTS: readonly ReasoningEffort[] = ['minimal', 'low', 'medium', 'high'];
+ 
+ /**
+@@ -164,17 +152,6 @@ const MCP_TOOL_APPROVAL_QUESTION_ID_PREFIX = 'mcp_tool_call_approval_';
+ const MCP_TOOL_APPROVAL_ANSWER_ALLOW = 'Allow';
+ const MCP_TOOL_APPROVAL_ANSWER_DECLINE = '__codex_mcp_decline__';
+ 
+-/**
+- * `supported_endpoints` value (on a Copilot CAPI {@link CCAModel}) that marks
+- * a model as reachable through CAPI's OpenAI-shaped Responses endpoint. Codex
+- * only drives models via this endpoint (the `vscode-proxy` provider uses
+- * `wire_api="responses"`), so the model picker is filtered to models that
+- * advertise it. Confirmed against the live CAPI catalog: gpt-5.x / gpt-5*-codex
+- * / mai-code carry `/responses`; Anthropic models carry `/v1/messages` and
+- * chat-only models carry `/chat/completions` (neither is usable by codex).
+- */
+-const CODEX_RESPONSES_ENDPOINT = '/responses';
+-
+ /**
+  * Codex's Agent Mode schema, derived from the platform-generic Mode schema but
+  * with "Autopilot" removed. Codex has only two native collaboration modes —
+@@ -614,7 +591,6 @@ type ConnectionState =
+ interface IConnectionReady {
+ 	readonly client: ICodexAppServerClient;
+ 	readonly usageSource: CodexUsageSource;
+-	readonly proxyHandle?: ICodexProxyHandle;
+ 	readonly child: ChildProcessWithoutNullStreams;
+ }
+ 
+@@ -827,12 +803,9 @@ export class CodexAgent extends Disposable implements IAgent {
+ 
+ 	constructor(
+ 		@ILogService private readonly _logService: ILogService,
+-		@ICopilotApiService private readonly _copilotApiService: ICopilotApiService,
+-		@ICodexProxyService private readonly _codexProxyService: ICodexProxyService,
+ 		@IAgentConfigurationService private readonly _configurationService: IAgentConfigurationService,
+ 		@IAgentHostGitHubEndpointService private readonly _gitHubEndpointService: IAgentHostGitHubEndpointService,
+ 		@IAgentSdkDownloader private readonly _agentSdkDownloader: IAgentSdkDownloader,
+-		@IProductService private readonly _productService: IProductService,
+ 		@IAgentPluginManager private readonly _pluginManager: IAgentPluginManager,
+ 		@IFileService private readonly _fileService: IFileService,
+ 		@INativeEnvironmentService private readonly _environmentService: INativeEnvironmentService,
+@@ -872,12 +845,6 @@ export class CodexAgent extends Disposable implements IAgent {
+ 		if (this._usageSource !== 'openai') {
+ 			return;
+ 		}
+-		const source = resolveCodexUsageSourceAfterAccountRead(this._usageSource, account);
+-		if (source === 'copilot') {
+-			this._logService.info('[Codex] OpenAI is signed out; falling back to GitHub Copilot');
+-			this._configurationService.updateRootConfig({ [AgentHostConfigKey.CodexUsageSource]: source });
+-			return;
+-		}
+ 		if (account.status === 'signedIn') {
+ 			this._queueModelRefresh();
+ 		}
+@@ -888,7 +855,7 @@ export class CodexAgent extends Disposable implements IAgent {
+ 	}
+ 
+ 	private _resolveUsageSource(): CodexUsageSource {
+-		return this._configurationService.getRootValue(agentHostCustomizationConfigSchema, AgentHostConfigKey.CodexUsageSource) ?? 'copilot';
++		return 'openai';
+ 	}
+ 
+ 	private _requestUsageSourceChange(source: CodexUsageSource): void {
+@@ -977,12 +944,7 @@ export class CodexAgent extends Disposable implements IAgent {
+ 			void this._refreshProviderConfiguration();
+ 			return true;
+ 		}
+-		if (changed && this._connection.kind === 'ready' && this._connection.proxyHandle) {
+-			// Codex stays running — proxy reads the new token from its
+-			// own cell on the next request (Decision 4).
+-			this._connection.proxyHandle.setToken(token);
+-			this._queueModelRefresh();
+-		} else if (changed) {
++		if (changed) {
+ 			// Defer model refresh until the connection comes up.
+ 			this._queueModelRefresh();
+ 		}
+@@ -1260,58 +1222,7 @@ export class CodexAgent extends Disposable implements IAgent {
+ 	}
+ 
+ 	private async _refreshModels(): Promise<void> {
+-		const usageSource = this._usageSource;
+-		if (usageSource === 'openai') {
+-			await this._refreshOpenAIModels();
+-			return;
+-		}
+-		const token = this._githubToken;
+-		if (!token) {
+-			this._models.set([], undefined);
+-			return;
+-		}
+-		try {
+-			const userAgent = `${USER_AGENT_PREFIX}/${this._productService.version}`;
+-			const all = await this._copilotApiService.models(token, { headers: { 'User-Agent': userAgent }, suppressIntegrationId: true });
+-			if (this._usageSource !== usageSource || this._githubToken !== token) {
+-				return;
+-			}
+-			const configSchema = this._createReasoningEffortConfigSchema();
+-			// Codex talks to every model through the `vscode-proxy` custom model
+-			// provider with `wire_api="responses"` (see CodexProxyService), so it
+-			// can only drive models that expose Copilot CAPI's OpenAI-shaped
+-			// Responses endpoint. Filter the catalog to those advertising
+-			// `/responses` in `supported_endpoints` (this drops Anthropic
+-			// `/v1/messages` and chat-completions-only models, which codex cannot
+-			// use). The chosen id is forwarded straight through; CAPI remains the
+-			// authority on what the token may actually use.
+-			const models = all
+-				.filter(m => m.supported_endpoints?.includes(CODEX_RESPONSES_ENDPOINT))
+-				.sort((a, b) => Number(b.is_chat_default) - Number(a.is_chat_default))
+-				.map((m): IAgentModelInfo => ({
+-					provider: this.id,
+-					id: m.id,
+-					name: m.name ?? m.id,
+-					maxContextWindow: m.capabilities?.limits?.max_context_window_tokens,
+-					maxOutputTokens: m.capabilities?.limits?.max_output_tokens,
+-					maxPromptTokens: m.capabilities?.limits?.max_prompt_tokens,
+-					supportsVision: !!m.capabilities?.supports?.vision,
+-					configSchema,
+-					policyState: m.policy?.state as PolicyState | undefined,
+-					_meta: createPricingMetaFromBilling(
+-						normalizeCAPIBilling(m.billing),
+-						typeof m.model_picker_price_category === 'string'
+-							? m.model_picker_price_category
+-							: undefined,
+-					),
+-				}));
+-			this._models.set(models, undefined);
+-		} catch (err) {
+-			this._logService.warn(`[Codex] Failed to refresh models: ${err instanceof Error ? err.message : String(err)}`);
+-			if (this._usageSource === usageSource && this._githubToken === token) {
+-				this._models.set([], undefined);
+-			}
+-		}
++		await this._refreshOpenAIModels();
+ 	}
+ 
+ 	private async _refreshOpenAIModels(): Promise<void> {
+@@ -1379,7 +1290,6 @@ export class CodexAgent extends Disposable implements IAgent {
+ 		const promise = startPromise.then(ready => {
+ 			if (generation !== this._connectionGeneration || usageSource !== this._usageSource) {
+ 				ready.client.dispose();
+-				ready.proxyHandle?.dispose();
+ 				try { ready.child.kill('SIGKILL'); } catch { /* already dead */ }
+ 				throw new Error('Codex usage source changed while app-server was starting');
+ 			}
+@@ -1450,16 +1360,8 @@ export class CodexAgent extends Disposable implements IAgent {
+ 			throw new Error(`Codex binary not executable: ${binaryPath} (${err instanceof Error ? err.message : String(err)})`);
+ 		}
+ 
+-		let proxyHandle: ICodexProxyHandle | undefined;
+-		if (usageSource === 'copilot') {
+-			if (!token) {
+-				throw new Error('Codex Copilot launch requires a GitHub token');
+-			}
+-			proxyHandle = await this._codexProxyService.start(token);
+-		}
+-
+ 		const extraArgs = parseBinaryArgs(process.env[AgentHostCodexAgentBinaryArgsEnvVar]);
+-		const launchConfig = buildCodexLaunchConfig(usageSource, process.env, proxyHandle, extraArgs);
++		const launchConfig = buildCodexLaunchConfig(usageSource, process.env, undefined, extraArgs);
+ 		const env = launchConfig.env;
+ 		const userCodexHome = process.env[AgentHostCodexAgentCodexHomeEnvVar];
+ 		if (userCodexHome) {
+@@ -1468,7 +1370,7 @@ export class CodexAgent extends Disposable implements IAgent {
+ 
+ 		const args = [...launchConfig.args];
+ 
+-		this._logService.info(`[Codex] spawning usageSource=${usageSource} proxy=${proxyHandle ? 'enabled' : 'disabled'} ${binaryPath} ${args.join(' ')}`);
++		this._logService.info(`[Codex] spawning usageSource=${usageSource} ${binaryPath} ${args.join(' ')}`);
+ 		const child = spawn(binaryPath, args, { env, stdio: ['pipe', 'pipe', 'pipe'] });
+ 
+ 		// Surface stderr to the log channel — codex writes useful startup
+@@ -1498,23 +1400,11 @@ export class CodexAgent extends Disposable implements IAgent {
+ 				capabilities: { experimentalApi: true, requestAttestation: false, optOutNotificationMethods: null },
+ 			});
+ 			client.notify<'initialized'>('initialized', undefined as never);
+-			// With `requires_openai_auth = false` on the proxy provider,
+-			// codex does not require a separate login step — the proxy
+-			// nonce is read from OPENAI_API_KEY by the provider's env_key.
+-			if (userCodexHome && proxyHandle) {
+-				// User-provided CODEX_HOME may target a provider that
+-				// still requires auth; preserve the apiKey login path.
+-				await client.request<'account/login/start'>('account/login/start', {
+-					type: 'apiKey',
+-					apiKey: proxyHandle.nonce,
+-				});
+-			}
+ 			if (usageSource === 'openai') {
+ 				void this._refreshAccount(client);
+ 			}
+ 		} catch (err) {
+ 			client.dispose();
+-			proxyHandle?.dispose();
+ 			try { child.kill('SIGKILL'); } catch { /* already dead */ }
+ 			throw err;
+ 		}
+@@ -1606,7 +1496,7 @@ export class CodexAgent extends Disposable implements IAgent {
+ 		// until the next `mcpServer/startupStatus/updated` notification.
+ 		void this._refreshMcpInventory(client);
+ 
+-		return { client, usageSource, proxyHandle, child };
++		return { client, usageSource, child };
+ 	}
+ 
+ 	/**
+@@ -2651,11 +2541,6 @@ export class CodexAgent extends Disposable implements IAgent {
+ 		} catch (err) {
+ 			this._logService.error(`[Codex] Failed to dispose app-server client after connection lost: ${err instanceof Error ? err.message : String(err)}`);
+ 		}
+-		try {
+-			conn.proxyHandle?.dispose();
+-		} catch (err) {
+-			this._logService.error(`[Codex] Failed to dispose proxy handle after connection lost: ${err instanceof Error ? err.message : String(err)}`);
+-		}
+ 	}
+ 
+ 	private _disposeConnection(): void {
+@@ -2666,7 +2551,6 @@ export class CodexAgent extends Disposable implements IAgent {
+ 			return;
+ 		}
+ 		try { connection.client.dispose(); } catch { /* ignore */ }
+-		try { connection.proxyHandle?.dispose(); } catch { /* ignore */ }
+ 		try { connection.child.kill('SIGKILL'); } catch { /* already dead */ }
+ 	}
+ 

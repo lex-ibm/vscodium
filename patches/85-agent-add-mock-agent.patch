@@ -1,0 +1,45 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Alex Garcia <lex@ibm.com>
+Date: Tue, 18 Aug 2026 07:51:28 -0500
+Subject: agent host: allow registering the scripted mock agent
+
+Removing the Copilot, Claude and Codex providers leaves the local agent host with nothing to register. `VSCODE_AGENT_HOST_MOCK_AGENT_ENABLED` registers the scripted mock agent the remote server already offers behind `--enable-mock-agent`, off by default and absent from built products since its sources live under `test/`.
+
+diff --git a/src/vs/platform/agentHost/common/agentService.ts b/src/vs/platform/agentHost/common/agentService.ts
+index 8e3cdb7a3d43b56d723ba03b4827838da8e7d396..d35cd8b32253850cf411d5184ff521b1ab82da67 100644
+--- a/src/vs/platform/agentHost/common/agentService.ts
++++ b/src/vs/platform/agentHost/common/agentService.ts
+@@ -148,6 +148,8 @@ export const AgentHostClaudeAgentEnabledEnvVar = 'VSCODE_AGENT_HOST_CLAUDE_AGENT
+  */
+ export const AgentHostCodexAgentEnabledEnvVar = 'VSCODE_AGENT_HOST_CODEX_AGENT_ENABLED';
+ 
++export const AgentHostMockAgentEnabledEnvVar = 'VSCODE_AGENT_HOST_MOCK_AGENT_ENABLED';
++
+ /**
+  * Environment variable form of {@link AgentHostByokModelsEnabledSettingId}.
+  * Set by the agent host starters from the setting. Accepts `'true'` /
+diff --git a/src/vs/platform/agentHost/node/agentHostMain.ts b/src/vs/platform/agentHost/node/agentHostMain.ts
+index 5591629f7b324dd7b95d7a57169951134bbc3ce0..0eecfdbe68007352ce5719f5a7f5886761325ff9 100644
+--- a/src/vs/platform/agentHost/node/agentHostMain.ts
++++ b/src/vs/platform/agentHost/node/agentHostMain.ts
+@@ -15,7 +15,7 @@ import { URI } from '../../../base/common/uri.js';
+ import { generateUuid } from '../../../base/common/uuid.js';
+ import * as os from 'os';
+ import * as inspector from 'inspector';
+-import { AgentHostByokModelsEnabledEnvVar, AgentHostIpcChannels, IAgentHostInspectInfo, IAgentHostSocketInfo, IAgentService, IConnectionTrackerService, isAgentEnabled } from '../common/agentService.js';
++import { AgentHostByokModelsEnabledEnvVar, AgentHostIpcChannels, AgentHostMockAgentEnabledEnvVar, IAgentHostInspectInfo, IAgentHostSocketInfo, IAgentService, IConnectionTrackerService, isAgentEnabled } from '../common/agentService.js';
+ import { AgentService } from './agentService.js';
+ import { IAgentHostStateManager } from './agentHostStateManager.js';
+ import { IAgentConfigurationService } from './agentConfigurationService.js';
+@@ -204,6 +204,11 @@ async function startAgentHost(): Promise<void> {
+ 		throw err;
+ 	}
+ 
++	if (isAgentEnabled(process.env[AgentHostMockAgentEnabledEnvVar], false)) {
++		const { ScriptedMockAgent } = await import('../test/node/mockAgent.js');
++		agentService.registerProvider(disposables.add(new ScriptedMockAgent()));
++	}
++
+ 	// Surface agent-SDK download progress to clients as generic `progress`
+ 	// notifications. The downloader fires process-global frames keyed by package
+ 	// id; the agent service fans each out to the `createSession` progress tokens

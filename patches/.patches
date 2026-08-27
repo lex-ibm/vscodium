@@ -45,3 +45,10 @@
 61-extension-close-connection.patch
 80-ui-disable-onboarding.json
 81-ui-disable-onboarding.patch
+82-agent-decouple-ai-features.patch
+83-agent-remove-github-signin.patch
+84-agent-show-window-entry.patch
+85-agent-add-mock-agent.patch
+86-agent-restore-claude.patch
+87-agent-restore-codex.patch
+88-ui-remove-aquarium.patch
