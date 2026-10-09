@@ -1,0 +1,226 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Alex Garcia <lex@ibm.com>
+Date: Tue, 18 Aug 2026 07:51:39 -0500
+Subject: sessions: remove the aquarium easter egg
+
+The aquarium renders fish built from the Microsoft VS Code logo, tinted in the three VS Code release-channel colours. The logo is inlined as an SVG path constant rather than an asset, so neither the branding substitution nor the icon overlay can rebrand it. The contribution, its context-menu toggle, the `sessionsAquariumActive` context key and the `NewChatView.setVisible` override that forwarded host visibility to the mount are removed.
+
+diff --git a/src/vs/sessions/SESSIONS.md b/src/vs/sessions/SESSIONS.md
+index ee2aa64cf215d826c01e512ce0708f37b60276e4..17f1431bbf63caaaa381158740d22fe43c1bc8a5 100644
+--- a/src/vs/sessions/SESSIONS.md
++++ b/src/vs/sessions/SESSIONS.md
+@@ -336,19 +336,11 @@ replacement widget restores it when the user returns to the new-session view.
+ Starting a send clears the stored draft before request dispatch and any view
+ replacement.
+ 
+-The new-session view mounts the aquarium action outside
+-`.new-chat-widget-content`. Its surrounding surface has checked **Aquarium** and
+-**Pet (/vscode-pet)** context-menu items. `AquariumService` owns the
+-application-scoped action visibility preference; `IChatPetService` owns the same
+-persisted pet state used by `/vscode-pet`. Context-menu events from inside
++The new-session view's surrounding surface has a checked
++**Pet (/vscode-pet)** context-menu item; `IChatPetService` owns the persisted
++pet state used by `/vscode-pet`. Context-menu events from inside
+ `.new-chat-widget-content` are left untouched so the composer retains its own
+-context-menu behavior. The aquarium preference is also keyboard-accessible
+-through the **Developer: Toggle Aquarium Action Visibility** command.
+-`NewChatView` forwards its effective grid visibility to the aquarium mount so a
+-hidden composer cannot leave the aquarium rendering behind the visible chat
+-surface. Since `NewChatView` also hosts the peer-chat composer,
+-aquarium-specific lifecycle calls must first narrow the wrapped widget to
+-`NewChatWidget`.
++context-menu behavior.
+ 
+ Agent feedback created while the active session is undefined or uncreated uses
+ one shared new-session feedback scope, so it follows every undefined/uncreated
+diff --git a/src/vs/sessions/common/contextkeys.ts b/src/vs/sessions/common/contextkeys.ts
+index b9a666dfb75e7a60983061c8681b97b9d55b25c6..fc9ee394142359885cc59020d4ae58ab969e2da2 100644
+--- a/src/vs/sessions/common/contextkeys.ts
++++ b/src/vs/sessions/common/contextkeys.ts
+@@ -100,12 +100,6 @@ export const SessionsBlockedSessionsVisibleContext = new RawContextKey<boolean>(
+ 
+ //#endregion
+ 
+-//#region < --- Aquarium --- >
+-
+-export const SessionsAquariumActiveContext = new RawContextKey<boolean>('sessionsAquariumActive', false, localize('sessionsAquariumActive', "Whether the sessions aquarium overlay is active"));
+-
+-//#endregion
+-
+ //#region < --- Session Navigation --- >
+ 
+ export const CanGoBackContext = new RawContextKey<boolean>('sessionsCanGoBack', false, localize('sessionsCanGoBack', "Whether there is a previous session in the navigation history"));
+diff --git a/src/vs/sessions/contrib/chat/browser/chatView.ts b/src/vs/sessions/contrib/chat/browser/chatView.ts
+index 3bf73707d645f65c729441e5782385183b8b9127..5f3b757748ebc0b5d147ff453b9d9c98056cea0d 100644
+--- a/src/vs/sessions/contrib/chat/browser/chatView.ts
++++ b/src/vs/sessions/contrib/chat/browser/chatView.ts
+@@ -108,11 +108,6 @@ export class NewChatView extends AbstractChatView {
+ 		this._widget.attach(uris);
+ 	}
+ 
+-	override setVisible(visible: boolean): void {
+-		if (this._widget instanceof NewChatWidget) {
+-			this._widget.setHostVisible(visible);
+-		}
+-	}
+ }
+ 
+ /**
+diff --git a/src/vs/sessions/contrib/chat/browser/newChatWidget.ts b/src/vs/sessions/contrib/chat/browser/newChatWidget.ts
+index a028479d3dac1cf89cc444a069827519aa7e2c2f..5c7f51e1665bdb30dd1ee2a551869abc407d48c7 100644
+--- a/src/vs/sessions/contrib/chat/browser/newChatWidget.ts
++++ b/src/vs/sessions/contrib/chat/browser/newChatWidget.ts
+@@ -23,7 +23,6 @@ import { localize } from '../../../../nls.js';
+ import { IActiveSession, ISessionsManagementService } from '../../../services/sessions/common/sessionsManagement.js';
+ import { ISession } from '../../../services/sessions/common/session.js';
+ import { IOpenNewSessionResult, ISessionsService } from '../../../services/sessions/browser/sessionsService.js';
+-import { IAquariumService, IMountedToggleHandle } from '../../aquarium/browser/aquariumOverlay.js';
+ import { WorkspacePicker } from './sessionWorkspacePicker.js';
+ import { WebWorkspacePicker } from './webWorkspacePicker.js';
+ import { IPreferredSessionType } from './sessionTypePicker.js';
+@@ -55,7 +54,6 @@ export class NewChatWidget extends Disposable {
+ 	private _chatTipContainer: HTMLElement | undefined;
+ 	private _isChatTipSessionInitialized = false;
+ 	private _isInputOnboardingVisible = false;
+-	private _aquariumToggle: IMountedToggleHandle | undefined;
+ 
+ 	/** Recreates the draft once a better/late-registering provider can serve the folder (see {@link _createNewSession}). */
+ 	private readonly _pendingPreferredUpgrade = new MutableDisposable<IDisposable>();
+@@ -110,7 +108,6 @@ export class NewChatWidget extends Disposable {
+ 		@ILogService private readonly logService: ILogService,
+ 		@ISessionsManagementService private readonly sessionsManagementService: ISessionsManagementService,
+ 		@ISessionsService private readonly sessionsService: ISessionsService,
+-		@IAquariumService private readonly aquariumService: IAquariumService,
+ 		@IAgentHostFilterService private readonly agentHostFilterService: IAgentHostFilterService,
+ 		@IUriIdentityService private readonly uriIdentityService: IUriIdentityService,
+ 		@IAgentFeedbackService private readonly agentFeedbackService: IAgentFeedbackService,
+@@ -280,14 +277,6 @@ export class NewChatWidget extends Disposable {
+ 		const chatWidgetContainer = dom.append(element, dom.$('.new-chat-widget-container'));
+ 		const chatWidgetContent = dom.append(chatWidgetContainer, dom.$('.new-chat-widget-content'));
+ 
+-		this._aquariumToggle = this._register(this.aquariumService.mountToggle(element));
+-		const aquariumAction = this._register(new Action(
+-			'sessions.aquarium.showAction',
+-			localize('aquariumAction', "Aquarium"),
+-			undefined,
+-			true,
+-			() => this.aquariumService.toggleActionVisibility()
+-		));
+ 		const petAction = this._register(new Action(
+ 			'sessions.chatPet.toggle',
+ 			localize('petAction', "Pet (/vscode-pet)"),
+@@ -303,12 +292,11 @@ export class NewChatWidget extends Disposable {
+ 
+ 			e.preventDefault();
+ 			e.stopPropagation();
+-			aquariumAction.checked = this.aquariumService.actionVisible.get();
+ 			petAction.checked = this.chatPetService.enabled.get();
+ 			const anchor = new StandardMouseEvent(dom.getWindow(element), e);
+ 			this.contextMenuService.showContextMenu({
+ 				getAnchor: () => anchor,
+-				getActions: () => [aquariumAction, petAction],
++				getActions: () => [petAction],
+ 				getCheckedActionsRepresentation: () => 'checkbox',
+ 			});
+ 		}));
+@@ -898,10 +886,6 @@ export class NewChatWidget extends Disposable {
+ 		this._newChatInput.prefillInput(text);
+ 	}
+ 
+-	setHostVisible(visible: boolean): void {
+-		this._aquariumToggle?.setHostVisible(visible);
+-	}
+-
+ 	sendQuery(text: string): void {
+ 		this._newChatInput.sendQuery(text);
+ 	}
+diff --git a/src/vs/sessions/contrib/chat/browser/sessionsChatAccessibilityHelp.ts b/src/vs/sessions/contrib/chat/browser/sessionsChatAccessibilityHelp.ts
+index b9ce916e0a669fd3c4787db445e976270d57a4bd..415b83de13e4131b908d3fdb6482248aee9a618d 100644
+--- a/src/vs/sessions/contrib/chat/browser/sessionsChatAccessibilityHelp.ts
++++ b/src/vs/sessions/contrib/chat/browser/sessionsChatAccessibilityHelp.ts
+@@ -38,7 +38,6 @@ export class SessionsChatAccessibilityHelp implements IAccessibleViewImplementat
+ 		content.push(localize('sessionsChat.mobileConfig', "On mobile, the mode and model pickers appear as tappable chips below the input. Tap a chip to open a bottom sheet where you can change the selection."));
+ 		content.push(localize('sessionsChat.history', "Use up and down arrows to navigate your request history in the input box."));
+ 		content.push(localize('sessionsChat.vscodePet', "Use the checked Pet item in the new-session view context menu, or type /vscode-pet, to show or hide the VS Code pet above the input. Drag it horizontally to reposition it, or use Tab to focus it and the left and right arrow keys to move it. Press Enter or Space to show it some love."));
+-		content.push(localize('sessionsChat.aquariumAction', "To show or hide the aquarium action on the new-session view, use the checked Aquarium item in the context menu outside the composer, or run the Toggle Aquarium Action Visibility command."));
+ 		content.push(localize('sessionsChat.dictation', "When dictation is configured, dictate your message into the input{0}. Tap to start and stop, or hold to dictate only while pressed. If the speech-to-text model is still preparing, activate the dictation control again to cancel.", '<keybinding:sessions.action.chat.toggleDictation>'));
+ 		content.push(localize('sessionsChat.voiceMode', "Start or stop Voice Mode to interact with the agent using your microphone{0}.", '<keybinding:agentsVoice.startVoiceInChat>'));
+ 		content.push(localize('sessionsChat.micContextMenu', "To choose a microphone or turn off dictation or Voice Mode, focus the microphone button in the input toolbar and open its context menu (for example Shift+F10)."));
+diff --git a/src/vs/sessions/contrib/chat/test/browser/chatView.test.ts b/src/vs/sessions/contrib/chat/test/browser/chatView.test.ts
+deleted file mode 100644
+index 325ea1eeb58133d02d6526f4718ea9a4341489d5..0000000000000000000000000000000000000000
+--- a/src/vs/sessions/contrib/chat/test/browser/chatView.test.ts
++++ /dev/null
+@@ -1,36 +0,0 @@
+-/*---------------------------------------------------------------------------------------------
+- *  Copyright (c) Microsoft Corporation. All rights reserved.
+- *  Licensed under the MIT License. See License.txt in the project root for license information.
+- *--------------------------------------------------------------------------------------------*/
+-
+-import assert from 'assert';
+-import { ensureNoDisposablesAreLeakedInTestSuite } from '../../../../../base/test/common/utils.js';
+-import { NewChatView } from '../../browser/chatView.js';
+-import { NewChatInSessionWidget } from '../../browser/newChatInSessionWidget.js';
+-import { NewChatWidget } from '../../browser/newChatWidget.js';
+-
+-suite('Sessions - Chat View', () => {
+-	ensureNoDisposablesAreLeakedInTestSuite();
+-
+-	test('forwards new chat visibility to the aquarium host', () => {
+-		const forwarded: boolean[] = [];
+-		const view: NewChatView = Object.assign(Object.create(NewChatView.prototype), {
+-			_widget: Object.assign(Object.create(NewChatWidget.prototype), {
+-				setHostVisible: (visible: boolean) => forwarded.push(visible),
+-			}),
+-		});
+-
+-		view.setVisible(false);
+-		view.setVisible(true);
+-
+-		assert.deepStrictEqual(forwarded, [false, true]);
+-	});
+-
+-	test('does not forward aquarium visibility to the peer chat composer', () => {
+-		const view: NewChatView = Object.assign(Object.create(NewChatView.prototype), {
+-			_widget: Object.create(NewChatInSessionWidget.prototype),
+-		});
+-
+-		assert.doesNotThrow(() => view.setVisible(false));
+-	});
+-});
+diff --git a/src/vs/sessions/contrib/chat/test/browser/newChatWidget.fixture.ts b/src/vs/sessions/contrib/chat/test/browser/newChatWidget.fixture.ts
+index 8cc42a4f720b6a916469fff568d0b84ee989ab83..61208f1bb062bbe5cd23c1826565b5b5811ce0e0 100644
+--- a/src/vs/sessions/contrib/chat/test/browser/newChatWidget.fixture.ts
++++ b/src/vs/sessions/contrib/chat/test/browser/newChatWidget.fixture.ts
+@@ -34,7 +34,6 @@ import { ISessionsRecentWorkspacesService } from '../../../../services/sessions/
+ import { ISessionsService } from '../../../../services/sessions/browser/sessionsService.js';
+ import { IActiveSession, ISessionsManagementService } from '../../../../services/sessions/common/sessionsManagement.js';
+ import { AGENT_FEEDBACK_NEW_SESSION_RESOURCE, AgentFeedbackKind, AgentFeedbackState, IAgentFeedback, IAgentFeedbackService } from '../../../agentFeedback/browser/agentFeedbackService.js';
+-import { IAquariumService } from '../../../aquarium/browser/aquariumOverlay.js';
+ import { NewChatView } from '../../browser/chatView.js';
+ import { INewChatVoiceTargetService, NewChatVoiceTargetService } from '../../browser/newChatVoice.js';
+ 
+@@ -112,11 +111,6 @@ async function renderNewChatWidget(context: ComponentFixtureContext, commentCoun
+ 				override readonly isDiscovering = false;
+ 				override async rediscover(): Promise<void> { }
+ 			}());
+-			reg.defineInstance(IAquariumService, new class extends mock<IAquariumService>() {
+-				override mountToggle() {
+-					return { dispose() { }, setHostVisible() { } };
+-				}
+-			}());
+ 			reg.defineInstance(IAgentFeedbackService, new class extends mock<IAgentFeedbackService>() {
+ 				override readonly onDidChangeFeedback = Event.None;
+ 				override readonly onDidChangeFeedbackScope = Event.None;
+diff --git a/src/vs/sessions/sessions.common.main.ts b/src/vs/sessions/sessions.common.main.ts
+index ef7b1fe2e92902a535e733c422a63e4adfe1555b..b86e5bb0606ec5796fc756e5784a30439b488eef 100644
+--- a/src/vs/sessions/sessions.common.main.ts
++++ b/src/vs/sessions/sessions.common.main.ts
+@@ -489,7 +489,6 @@ import './contrib/editor/browser/editor.contribution.js';
+ import './contrib/terminal/browser/sessionsTerminalContribution.js';
+ import './contrib/chatDebug/browser/chatDebug.contribution.js';
+ import './contrib/workspace/browser/workspace.contribution.js';
+-import './contrib/aquarium/browser/aquarium.contribution.js';
+ import './contrib/policyBlocked/browser/policyBlocked.contribution.js';
+ import './contrib/automations/browser/automations.contribution.js';
+ import './contrib/customViewTest/browser/customViewTest.contribution.js';

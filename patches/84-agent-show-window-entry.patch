@@ -1,0 +1,36 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Alex Garcia <lex@ibm.com>
+Date: Tue, 18 Aug 2026 07:51:23 -0500
+Subject: agent host: gate the Agents window entry points on the host
+
+Opening the Agents window was preconditioned on the Copilot setup sentiment, which `ChatEntitlementContext` forces hidden whenever `chat.disableAIFeatures` is on, so the title bar button, the chat title menu entry and the three commands were all unreachable. The precondition now tracks whether the agent host is enabled.
+
+diff --git a/src/vs/workbench/contrib/chat/common/constants.ts b/src/vs/workbench/contrib/chat/common/constants.ts
+index 825559536dbd342e8927fb0a89a8ab567a184673..293dd8d660fcdc3c65e1adf603270efdc9d51851 100644
+--- a/src/vs/workbench/contrib/chat/common/constants.ts
++++ b/src/vs/workbench/contrib/chat/common/constants.ts
+@@ -11,13 +11,12 @@ import { IWorkspace, IWorkspaceContextService } from '../../../../platform/works
+ import { isVirtualWorkspace } from '../../../../platform/workspace/common/virtualWorkspace.js';
+ import { ServicesAccessor } from '../../../../platform/instantiation/common/instantiation.js';
+ import { ContextKeyExpr, RawContextKey } from '../../../../platform/contextkey/common/contextkey.js';
+-import { ChatEntitlementContextKeys } from '../../../services/chat/common/chatEntitlementService.js';
+ import { IsAuxiliaryWindowContext, IsSessionsWindowContext } from '../../../common/contextkeys.js';
+ import { URI } from '../../../../base/common/uri.js';
+ import { generateUuid } from '../../../../base/common/uuid.js';
+ import { LocalChatSessionUri } from './model/chatUri.js';
+ import { clearUserSelectedSessionType, getRememberedSessionType, hasPreferredCopilotHarness, storeUserSelectedSessionType } from './chatSessionTypePreference.js';
+-import { IAgentHostEnablementService } from '../../../../platform/agentHost/common/agentHostEnablementService.js';
++import { AGENT_HOST_ENABLED_CONTEXT_KEY, IAgentHostEnablementService } from '../../../../platform/agentHost/common/agentHostEnablementService.js';
+ 
+ export { ChatAIDisabledSettingId } from '../../../../platform/chat/common/chatSettings.js';
+ 
+@@ -507,8 +506,7 @@ export const CHAT_SUBAGENT_RESOURCE_QUERY_PARAM = 'subagentChatResource';
+ export const OPEN_WORKSPACE_IN_AGENTS_WINDOW_COMMAND_ID = 'workbench.action.openWorkspaceInAgentsWindow';
+ export const OPEN_AGENTS_WINDOW_COMMAND_ID = 'workbench.action.openAgentsWindow';
+ export const OPEN_AGENTS_WINDOW_PRECONDITION = ContextKeyExpr.and(
+-	ChatEntitlementContextKeys.Setup.hidden.negate(),
+-	ChatEntitlementContextKeys.Setup.disabledInWorkspace.negate(),
++	AGENT_HOST_ENABLED_CONTEXT_KEY,
+ 	IsSessionsWindowContext.negate(),
+ 	ContextKeyExpr.has(`config.${ChatConfiguration.AgentEnabled}`),
+ 	IsAuxiliaryWindowContext.negate()
