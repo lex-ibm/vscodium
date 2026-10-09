@@ -519,6 +519,14 @@ jobs:
           os_name: linux
           os_slug: LINUX
           vscode_arch: armhf
+        - slug: PPC64
+          os_name: linux
+          os_slug: LINUX
+          vscode_arch: ppc64le
+        - slug: S390X
+          os_name: linux
+          os_slug: LINUX
+          vscode_arch: s390x
     env:
       BUILD_SOURCEVERSION: ${{ needs.compile.outputs.BUILD_SOURCEVERSION }}
       DISABLED: ${{ vars[format('DISABLE_STABLE_{0}_CLI_{1}', matrix.os_slug, matrix.slug)] }}

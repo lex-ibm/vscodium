@@ -109,18 +109,40 @@ else
   elif [[ "${VSCODE_ARCH}" == "ppc64le" ]]; then
     VSCODE_CLI_TARGET="powerpc64le-unknown-linux-gnu"
 
-    # Use system libs instead of @vscode/openssl-prebuilt
-    mkdir -p openssl/out/ppc64le-linux/
-    ln -sf /usr/lib/powerpc64le-linux-gnu openssl/out/ppc64le-linux/lib
-    ln -sf /usr/include openssl/out/ppc64le-linux/include
-
     if [[ "${CI_BUILD}" != "no" ]] && [[ "$(uname -m)" != "ppc64le" ]]; then
-      export CARGO_TARGET_POWERPC64LE_UNKNOWN_LINUX_GNU_LINKER=powerpc64le-linux-gnu-gcc-10
-      export CC_powerpc64le_unknown_linux_gnu=powerpc64le-linux-gnu-gcc-10
-      export CXX_powerpc64le_unknown_linux_gnu=powerpc64le-linux-gnu-g++-10
-      export PKG_CONFIG_ALLOW_CROSS=1
-    fi
+      VSCODE_SYSROOT_REPOSITORY='VSCodium/vscode-linux-build-agent' VSCODE_SYSROOT_VERSION='20260706' node -e 'import { getVSCodeSysroot } from "../build/linux/debian/install-sysroot.ts"; getVSCodeSysroot("ppc64le");'
 
+      export OPENSSL_LIB_DIR="$( pwd )/${VSCODE_SYSROOT_DIR}/powerpc64le-linux-gnu/powerpc64le-linux-gnu/sysroot/usr/lib/powerpc64le-linux-gnu"
+      export OPENSSL_INCLUDE_DIR="$( pwd )/${VSCODE_SYSROOT_DIR}/powerpc64le-linux-gnu/powerpc64le-linux-gnu/sysroot/usr/include"
+      export OPENSSL_STATIC=1
+      export CARGO_TARGET_POWERPC64LE_UNKNOWN_LINUX_GNU_LINKER="$( pwd )/${VSCODE_SYSROOT_DIR}/powerpc64le-linux-gnu/bin/powerpc64le-linux-gnu-gcc"
+      export CC_powerpc64le_unknown_linux_gnu="$( pwd )/${VSCODE_SYSROOT_DIR}/powerpc64le-linux-gnu/bin/powerpc64le-linux-gnu-gcc"
+      export CXX_powerpc64le_unknown_linux_gnu="$( pwd )/${VSCODE_SYSROOT_DIR}/powerpc64le-linux-gnu/bin/powerpc64le-linux-gnu-g++"
+      export PKG_CONFIG_ALLOW_CROSS=1
+    else
+      # Use system libs instead of @vscode/openssl-prebuilt
+      mkdir -p openssl/out/ppc64le-linux/
+      ln -sf /usr/lib/powerpc64le-linux-gnu openssl/out/ppc64le-linux/lib
+      ln -sf /usr/include openssl/out/ppc64le-linux/include
+    fi
+  elif [[ "${VSCODE_ARCH}" == "s390x" ]]; then
+    VSCODE_CLI_TARGET="s390x-unknown-linux-gnu"
+
+    if [[ "${CI_BUILD}" != "no" ]] && [[ "$(uname -m)" != "s390x" ]]; then
+      VSCODE_SYSROOT_PREFIX='-glibc-2.28' VSCODE_SYSROOT_REPOSITORY='VSCodium/vscode-linux-build-agent' VSCODE_SYSROOT_VERSION='20241108' node -e 'import { getVSCodeSysroot } from "../build/linux/debian/install-sysroot.ts"; getVSCodeSysroot("s390x");'
+
+      export OPENSSL_LIB_DIR="$( pwd )/${VSCODE_SYSROOT_DIR}/s390x-linux-gnu/s390x-linux-gnu/sysroot/usr/lib/s390x-linux-gnu"
+      export OPENSSL_INCLUDE_DIR="$( pwd )/${VSCODE_SYSROOT_DIR}/s390x-linux-gnu/s390x-linux-gnu/sysroot/usr/include"
+      export OPENSSL_STATIC=1
+      export CARGO_TARGET_S390X_UNKNOWN_LINUX_GNU_LINKER="$( pwd )/${VSCODE_SYSROOT_DIR}/s390x-linux-gnu/bin/s390x-linux-gnu-gcc"
+      export CC_s390x_unknown_linux_gnu="$( pwd )/${VSCODE_SYSROOT_DIR}/s390x-linux-gnu/bin/s390x-linux-gnu-gcc"
+      export CXX_s390x_unknown_linux_gnu="$( pwd )/${VSCODE_SYSROOT_DIR}/s390x-linux-gnu/bin/s390x-linux-gnu-g++"
+      export PKG_CONFIG_ALLOW_CROSS=1
+    else
+      mkdir -p openssl/out/s390x-linux/
+      ln -sf /usr/lib/s390x-linux-gnu openssl/out/s390x-linux/lib
+      ln -sf /usr/include openssl/out/s390x-linux/include
+    fi
   elif [[ "${VSCODE_ARCH}" == "x64" ]]; then
     VSCODE_CLI_TARGET="x86_64-unknown-linux-gnu"
   fi

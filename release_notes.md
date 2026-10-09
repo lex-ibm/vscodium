@@ -313,12 +313,16 @@ update vscode to [@@MS_TAG@@](@@MS_URL@@)
 
 <table>
    <tr>
-      <td rowspan="2">Linux</td>
+      <td rowspan="3">Linux</td>
       <td>Remote Host</td>
       <td><a href="https://github.com/@@ASSETS_REPOSITORY@@/releases/download/@@VERSION@@@@QUALITY@@/@@APP_NAME_LC@@-reh-linux-s390x-@@VERSION@@@@QUALITY@@.tar.gz">@@APP_NAME_LC@@-reh-linux-s390x-@@VERSION@@@@QUALITY@@.tar.gz</a></td>
    </tr>
    <tr>
       <td>Web Host</td>
       <td><a href="https://github.com/@@ASSETS_REPOSITORY@@/releases/download/@@VERSION@@@@QUALITY@@/@@APP_NAME_LC@@-reh-web-linux-s390x-@@VERSION@@@@QUALITY@@.tar.gz">@@APP_NAME_LC@@-reh-web-linux-s390x-@@VERSION@@@@QUALITY@@.tar.gz</a></td>
+   </tr>
+   <tr>
+      <td>CLI</td>
+      <td><a href="https://github.com/@@ASSETS_REPOSITORY@@/releases/download/@@VERSION@@@@QUALITY@@/@@APP_NAME_LC@@-cli-linux-s390x-@@VERSION@@@@QUALITY@@.tar.gz">@@APP_NAME_LC@@-cli-linux-s390x-@@VERSION@@@@QUALITY@@.tar.gz</a></td>
    </tr>
 </table>
