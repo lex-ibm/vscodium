@@ -4,6 +4,7 @@
 # Env Paramaters
 # CHECK_ALL: yes | no
 # CHECK_REH: yes | no
+# CHECK_ONLY_CLI: yes | no
 # CHECK_ONLY_REH: yes | no
 # FORCE_LINUX_SNAP: true
 

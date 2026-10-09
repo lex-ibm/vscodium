@@ -7,6 +7,8 @@ if [[ "${CI_BUILD}" == "no" ]]; then
   exit 1
 fi
 
+. ./utils.sh
+
 tar -xzf ./vscode.tar.gz
 
 cd vscode || { echo "'vscode' dir not found"; exit 1; }

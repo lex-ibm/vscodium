@@ -1,28 +1,42 @@
 diff --git a/cli/src/commands/serve_web.rs b/cli/src/commands/serve_web.rs
-index 12178ef2..48b6c135 100644
+index 29136642..9f720170 100644
 --- a/cli/src/commands/serve_web.rs
 +++ b/cli/src/commands/serve_web.rs
-@@ -794,3 +794,3 @@ impl ConnectionManager {
- 		let dir_fut = cache.create(&args.release.commit, |target_dir| async move {
--			info!(log_for_fut, "Downloading server {}", release_for_fut.commit);
-+			info!(log_for_fut, "Downloading server {}/{}", release_for_fut.commit, release_for_fut.name);
- 			let tmpdir = tempfile::tempdir().unwrap();
-@@ -822,3 +822,3 @@ impl ConnectionManager {
+@@ -622,3 +622,3 @@ impl ConnectionManager {
+ 				Release {
+-					name: String::from("0.0.0"), // Version information not stored on cache
++					name: String::new(), // Version information not stored on cache
+ 					commit: latest_commit.clone(),
+@@ -700,3 +700,3 @@ impl ConnectionManager {
+ 			let release = Release {
+-				name: commit.to_string(),
++				name: String::new(),
+ 				commit: commit.to_string(),
+@@ -827,2 +827,3 @@ impl ConnectionManager {
+ 			unzip_downloaded_release(&archive_path, &target_dir, SilentCopyProgress())?;
++			crate::update_service::verify_downloaded_release(&release_for_fut, &target_dir)?;
+ 			Ok(())
+@@ -842,3 +843,3 @@ impl ConnectionManager {
  			.join("bin")
 -			.join(args.release.quality.server_entrypoint());
 +			.join(args.release.quality.server_entrypoint().unwrap());
  
 diff --git a/cli/src/constants.rs b/cli/src/constants.rs
-index 938f4343..7277908a 100644
+index eaaa908d..ced9eab4 100644
 --- a/cli/src/constants.rs
 +++ b/cli/src/constants.rs
-@@ -37,3 +37,6 @@ pub const DOCUMENTATION_URL: Option<&'static str> = option_env!("VSCODE_CLI_DOCU
+@@ -42,3 +42,11 @@ pub const DOCUMENTATION_URL: Option<&'static str> = option_env!("VSCODE_CLI_DOCU
  pub const VSCODE_CLI_COMMIT: Option<&'static str> = option_env!("VSCODE_CLI_COMMIT");
 -pub const VSCODE_CLI_UPDATE_ENDPOINT: Option<&'static str> = option_env!("VSCODE_CLI_UPDATE_URL");
 +pub const VSCODE_CLI_UPDATE_ENDPOINT: Option<&'static str> = option_env!("VSCODE_CLI_UPDATE_ENDPOINT");
-+pub const VSCODE_CLI_DOWNLOAD_ENDPOINT: Option<&'static str> = option_env!("VSCODE_CLI_DOWNLOAD_ENDPOINT");
-+pub const VSCODE_CLI_APP_NAME: Option<&'static str> = option_env!("VSCODE_CLI_APP_NAME");
 +pub const VSCODE_CLI_BINARY_NAME: Option<&'static str> = option_env!("VSCODE_CLI_BINARY_NAME");
++pub const VSCODE_CLI_RELEASE: Option<&'static str> = option_env!("VSCODE_CLI_RELEASE");
++pub const VSCODE_CLI_CLI_DOWNLOAD_URL_TEMPLATE: Option<&'static str> =
++	option_env!("VSCODE_CLI_CLI_DOWNLOAD_URL_TEMPLATE");
++pub const VSCODE_CLI_SERVER_DOWNLOAD_URL_TEMPLATE: Option<&'static str> =
++	option_env!("VSCODE_CLI_SERVER_DOWNLOAD_URL_TEMPLATE");
++pub const VSCODE_CLI_SERVER_WEB_DOWNLOAD_URL_TEMPLATE: Option<&'static str> =
++	option_env!("VSCODE_CLI_SERVER_WEB_DOWNLOAD_URL_TEMPLATE");
  
 diff --git a/cli/src/options.rs b/cli/src/options.rs
 index 7d152c0e..c0f2fb2e 100644
@@ -58,23 +72,48 @@ index 7d152c0e..c0f2fb2e 100644
 +		Ok(server_name)
  	}
 diff --git a/cli/src/tunnels/agent_host.rs b/cli/src/tunnels/agent_host.rs
-index 93651587..77d19e6f 100644
+index dbd54c1c..595b6c98 100644
 --- a/cli/src/tunnels/agent_host.rs
 +++ b/cli/src/tunnels/agent_host.rs
-@@ -233,3 +233,3 @@ impl AgentHostManager {
+@@ -243,3 +243,3 @@ impl AgentHostManager {
  				.join("bin")
 -				.join(release.quality.server_entrypoint())
 +				.join(release.quality.server_entrypoint().unwrap())
  		};
+@@ -473,2 +473,3 @@ impl AgentHostManager {
+ 				unzip_downloaded_release(&archive_path, &server_dir, SilentCopyProgress())?;
++				crate::update_service::verify_downloaded_release(&release, &server_dir)?;
+ 				Ok(())
 diff --git a/cli/src/tunnels/code_server.rs b/cli/src/tunnels/code_server.rs
-index df37b863..a3df1bea 100644
+index b4079f1a..c43ced2a 100644
 --- a/cli/src/tunnels/code_server.rs
 +++ b/cli/src/tunnels/code_server.rs
-@@ -499,3 +499,3 @@ impl<'a> ServerBuilder<'a> {
+@@ -501,2 +501,6 @@ impl<'a> ServerBuilder<'a> {
+ 				)?;
++				crate::update_service::verify_downloaded_release(
++					&self.server_params.release,
++					&server_dir,
++				)?;
+ 
+@@ -506,3 +510,3 @@ impl<'a> ServerBuilder<'a> {
  							.join("bin")
 -							.join(self.server_params.release.quality.server_entrypoint()),
 +							.join(self.server_params.release.quality.server_entrypoint().unwrap()),
  						&["--version"],
+diff --git a/cli/src/tunnels/control_server.rs b/cli/src/tunnels/control_server.rs
+index 71bf7ea2..a43c0ef6 100644
+--- a/cli/src/tunnels/control_server.rs
++++ b/cli/src/tunnels/control_server.rs
+@@ -6,3 +6,3 @@ use crate::async_pipe::get_socket_rw_stream;
+ use crate::commands::agent_host::{ensure_supervisor_running, ActiveAgentHost};
+-use crate::constants::{AGENT_HOST_PORT, CONTROL_PORT, PRODUCT_NAME_LONG};
++use crate::constants::{AGENT_HOST_PORT, CONTROL_PORT};
+ use crate::log;
+@@ -1328,3 +1328,3 @@ async fn handle_acquire_cli(
+ 		Some(commit) => Release {
+-			name: format!("{PRODUCT_NAME_LONG} CLI"),
++			name: String::new(),
+ 			commit,
 diff --git a/cli/src/tunnels/paths.rs b/cli/src/tunnels/paths.rs
 index 3d7d718a..98529bc6 100644
 --- a/cli/src/tunnels/paths.rs
@@ -85,95 +124,148 @@ index 3d7d718a..98529bc6 100644
 +					.join(self.quality.server_entrypoint().unwrap())
  			},
 diff --git a/cli/src/update_service.rs b/cli/src/update_service.rs
-index cd94139f..db064277 100644
+index cd94139f..7a98671e 100644
 --- a/cli/src/update_service.rs
 +++ b/cli/src/update_service.rs
-@@ -10,3 +10,3 @@ use serde::{Deserialize, Serialize};
+@@ -10,3 +10,8 @@ use serde::{Deserialize, Serialize};
  use crate::{
 -	constants::VSCODE_CLI_UPDATE_ENDPOINT,
-+	constants::{VSCODE_CLI_APP_NAME, VSCODE_CLI_DOWNLOAD_ENDPOINT, VSCODE_CLI_UPDATE_ENDPOINT},
++	constants::{
++		VSCODE_CLI_CLI_DOWNLOAD_URL_TEMPLATE, VSCODE_CLI_COMMIT, VSCODE_CLI_QUALITY,
++		VSCODE_CLI_RELEASE, VSCODE_CLI_SERVER_DOWNLOAD_URL_TEMPLATE,
++		VSCODE_CLI_SERVER_WEB_DOWNLOAD_URL_TEMPLATE, VSCODE_CLI_UPDATE_ENDPOINT,
++		VSCODE_CLI_VERSION,
++	},
  	log, options,
-@@ -18,3 +18,3 @@ use crate::{
- 		zipper,
--	},
-+	}
- };
-@@ -58,2 +58,10 @@ fn quality_download_segment(quality: options::Quality) -> &'static str {
+@@ -58,2 +63,102 @@ fn quality_download_segment(quality: options::Quality) -> &'static str {
  
-+fn get_app_name() -> Result<&'static str, CodeError> {
-+	VSCODE_CLI_APP_NAME.ok_or_else(|| CodeError::UpdatesNotConfigured("no app name"))
++fn get_env_or(name: &str, built_in: Option<&'static str>) -> Option<String> {
++	match std::env::var(name) {
++		Ok(value) if !value.is_empty() => Some(value),
++		_ => built_in
++			.filter(|value| !value.is_empty())
++			.map(|value| value.to_string()),
++	}
 +}
 +
-+fn get_download_endpoint() -> Result<&'static str, CodeError> {
-+	VSCODE_CLI_DOWNLOAD_ENDPOINT.ok_or_else(|| CodeError::UpdatesNotConfigured("no download url"))
++fn get_built_release(platform: Platform, target: TargetKind) -> Result<Option<Release>, CodeError> {
++	let (Some(commit), Some(quality)) = (
++		get_env_or("VSCODE_CLI_COMMIT", VSCODE_CLI_COMMIT),
++		get_env_or("VSCODE_CLI_QUALITY", VSCODE_CLI_QUALITY),
++	) else {
++		return Ok(None);
++	};
++
++	let quality = options::Quality::try_from(quality.as_str())
++		.map_err(|_| CodeError::UpdatesNotConfigured("unknown VSCODE_CLI_QUALITY"))?;
++
++	Ok(Some(Release {
++		name: String::new(),
++		platform,
++		target,
++		quality,
++		commit,
++	}))
++}
++
++fn get_download_url_template(target: TargetKind) -> Result<String, CodeError> {
++	match target {
++		TargetKind::Server => get_env_or(
++			"VSCODE_CLI_SERVER_DOWNLOAD_URL_TEMPLATE",
++			VSCODE_CLI_SERVER_DOWNLOAD_URL_TEMPLATE,
++		),
++		TargetKind::Web => get_env_or(
++			"VSCODE_CLI_SERVER_WEB_DOWNLOAD_URL_TEMPLATE",
++			VSCODE_CLI_SERVER_WEB_DOWNLOAD_URL_TEMPLATE,
++		),
++		TargetKind::Cli => get_env_or(
++			"VSCODE_CLI_CLI_DOWNLOAD_URL_TEMPLATE",
++			VSCODE_CLI_CLI_DOWNLOAD_URL_TEMPLATE,
++		),
++		TargetKind::Archive => None,
++	}
++	.ok_or(CodeError::UpdatesNotConfigured("no download url template"))
++}
++
++fn get_placeholder_value(placeholder: &str, release: &Release) -> Option<String> {
++	let is_built_commit = VSCODE_CLI_COMMIT == Some(release.commit.as_str());
++
++	match placeholder {
++		"os" => Some(release.platform.os()),
++		"arch" => Some(release.platform.arch()),
++		"commit" => Some(release.commit.clone()),
++		"quality" => Some(quality_download_segment(release.quality).to_string()),
++		"release" => match VSCODE_CLI_RELEASE.filter(|value| !value.is_empty()) {
++			Some(built_release) if is_built_commit => Some(built_release.to_string()),
++			_ if !release.name.is_empty() => Some(release.name.clone()),
++			_ => None,
++		},
++		"version" if is_built_commit => VSCODE_CLI_VERSION
++			.filter(|value| !value.is_empty())
++			.map(|version| version.to_string()),
++		_ => None,
++	}
++}
++
++fn expand_download_url_template(template: &str, release: &Release) -> Result<String, WrappedError> {
++	let mut url = String::new();
++	let mut remaining = template;
++
++	while let Some(start) = remaining.find("${") {
++		let length = remaining[start..].find('}').ok_or_else(|| {
++			wrap(
++				template,
++				"unterminated placeholder in the download url template",
++			)
++		})?;
++		let placeholder = &remaining[start + 2..start + length];
++		let value = get_placeholder_value(placeholder, release).ok_or_else(|| {
++			wrap(
++				template,
++				format!(
++					"cannot expand ${{{}}} for commit {} in the download url template",
++					placeholder, release.commit
++				),
++			)
++		})?;
++
++		url.push_str(&remaining[..start]);
++		url.push_str(&value);
++		remaining = &remaining[start + length + 1..];
++	}
++
++	url.push_str(remaining);
++
++	Ok(url)
 +}
 +
  fn get_update_endpoint() -> Result<String, CodeError> {
-@@ -66,3 +74,3 @@ fn get_update_endpoint() -> Result<String, CodeError> {
+@@ -66,3 +171,3 @@ fn get_update_endpoint() -> Result<String, CodeError> {
  		.map(|s| s.to_string())
 -		.ok_or(CodeError::UpdatesNotConfigured("no service url"))
 +		.ok_or(CodeError::UpdatesNotConfigured("no update url"))
  }
-@@ -74,3 +82,4 @@ impl UpdateService {
+@@ -74,39 +179,2 @@ impl UpdateService {
  
 -	pub async fn get_release_by_semver_version(
-+	/// Gets the latest commit for the target of the given quality.
-+	pub async fn get_latest_commit(
- 		&self,
-@@ -79,14 +88,10 @@ impl UpdateService {
- 		quality: options::Quality,
--		version: &str,
- 	) -> Result<Release, AnyError> {
- 		let update_endpoint = get_update_endpoint()?;
--		let download_segment = target
--			.download_segment(platform)
--			.ok_or_else(|| CodeError::UnsupportedPlatform(platform.to_string()))?;
- 		let download_url = format!(
--			"{}/api/versions/{}/{}/{}",
-+			"{}/{}/{}/{}/latest.json",
- 			&update_endpoint,
--			version,
--			download_segment,
- 			quality_download_segment(quality),
-+			platform.os(),
-+			platform.arch(),
- 		);
-@@ -100,3 +105,3 @@ impl UpdateService {
- 		let res = response.json::<UpdateServerVersion>().await?;
--		debug!(self.log, "Resolved version {} to {}", version, res.version);
-+		debug!(self.log, "Resolved quality {} to {}", quality, res.version);
- 
-@@ -111,36 +116,17 @@ impl UpdateService {
- 
--	/// Gets the latest commit for the target of the given quality.
--	pub async fn get_latest_commit(
 -		&self,
 -		platform: Platform,
 -		target: TargetKind,
 -		quality: options::Quality,
+-		version: &str,
 -	) -> Result<Release, AnyError> {
 -		let update_endpoint = get_update_endpoint()?;
 -		let download_segment = target
 -			.download_segment(platform)
 -			.ok_or_else(|| CodeError::UnsupportedPlatform(platform.to_string()))?;
-+	pub fn get_download_url(&self, release: &Release) -> Result<String, AnyError> {
-+		let app_name = get_app_name()?;
-+		let download_endpoint = get_download_endpoint()?;
-+
- 		let download_url = format!(
--			"{}/api/latest/{}/{}",
+-		let download_url = format!(
+-			"{}/api/versions/{}/{}/{}",
 -			&update_endpoint,
+-			version,
 -			download_segment,
 -			quality_download_segment(quality),
-+			"{}/download/{}/{}-reh-web-{}-{}-{}.tar.gz",
-+			download_endpoint,
-+			release.name,
-+			app_name,
-+			release.platform.os(),
-+			release.platform.arch(),
-+			release.name,
- 		);
- 
+-		);
+-
 -		let mut response = self.client.make_request("GET", download_url).await?;
 -
 -		if !response.status_code.is_success() {
@@ -181,7 +273,7 @@ index cd94139f..db064277 100644
 -		}
 -
 -		let res = response.json::<UpdateServerVersion>().await?;
--		debug!(self.log, "Resolved quality {} to {}", quality, res.version);
+-		debug!(self.log, "Resolved version {} to {}", version, res.version);
 -
 -		Ok(Release {
 -			target,
@@ -190,9 +282,43 @@ index cd94139f..db064277 100644
 -			name: res.name,
 -			commit: res.version,
 -		})
-+		Ok(download_url)
- 	}
-@@ -149,15 +135,3 @@ impl UpdateService {
+-	}
+-
+ 	/// Gets the latest commit for the target of the given quality.
+@@ -118,11 +186,19 @@ impl UpdateService {
+ 	) -> Result<Release, AnyError> {
++		if target != TargetKind::Cli {
++			if let Some(release) = get_built_release(platform, target)? {
++				debug!(
++					self.log,
++					"Using commit {} instead of the latest release", release.commit
++				);
++				return Ok(release);
++			}
++		}
++
+ 		let update_endpoint = get_update_endpoint()?;
+-		let download_segment = target
+-			.download_segment(platform)
+-			.ok_or_else(|| CodeError::UnsupportedPlatform(platform.to_string()))?;
+ 		let download_url = format!(
+-			"{}/api/latest/{}/{}",
++			"{}/{}/{}/{}/latest.json",
+ 			&update_endpoint,
+-			download_segment,
+ 			quality_download_segment(quality),
++			platform.os(),
++			platform.arch(),
+ 		);
+@@ -147,17 +223,11 @@ impl UpdateService {
+ 
++	pub fn get_download_url(&self, release: &Release) -> Result<String, AnyError> {
++		let template = get_download_url_template(release.target)?;
++
++		Ok(expand_download_url_template(&template, release)?)
++	}
++
+ 	/// Gets the download stream for the release.
  	pub async fn get_download_stream(&self, release: &Release) -> Result<SimpleResponse, AnyError> {
 -		let update_endpoint = get_update_endpoint()?;
 -		let download_segment = release
@@ -209,7 +335,37 @@ index cd94139f..db064277 100644
 -		);
 +		let download_url = self.get_download_url(release)?;
  
-@@ -195,13 +169,2 @@ pub enum TargetKind {
+@@ -187,2 +257,29 @@ where
+ 
++#[derive(Deserialize)]
++struct DownloadedProductJson {
++	pub commit: Option<String>,
++}
++
++pub fn verify_downloaded_release(release: &Release, target_dir: &Path) -> Result<(), WrappedError> {
++	let commit = std::fs::read(target_dir.join("product.json"))
++		.ok()
++		.and_then(|contents| serde_json::from_slice::<DownloadedProductJson>(&contents).ok())
++		.and_then(|product| product.commit)
++		.unwrap_or_default();
++
++	if !commit.is_empty() && commit == release.commit {
++		return Ok(());
++	}
++
++	let download_url = get_download_url_template(release.target)
++		.ok()
++		.and_then(|template| expand_download_url_template(&template, release).ok())
++		.unwrap_or_default();
++
++	Err(wrap(
++		format!("{} contains commit '{}'", download_url, commit),
++		format!("the download is not commit {}", release.commit),
++	))
++}
++
+ #[derive(Eq, PartialEq, Copy, Clone)]
+@@ -195,13 +292,2 @@ pub enum TargetKind {
  
 -impl TargetKind {
 -	fn download_segment(&self, platform: Platform) -> Option<String> {
@@ -223,7 +379,7 @@ index cd94139f..db064277 100644
 -}
 -
  #[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
-@@ -224,50 +187,36 @@ pub enum Platform {
+@@ -224,50 +310,36 @@ pub enum Platform {
  impl Platform {
 -	pub fn archive(&self) -> Option<String> {
 +	pub fn arch(&self) -> String {
@@ -303,7 +459,7 @@ index cd94139f..db064277 100644
 +			Platform::WindowsX86 => "win32",
 +			Platform::WindowsARM64 => "win32",
  		}
-@@ -276,6 +225,2 @@ impl Platform {
+@@ -276,6 +348,2 @@ impl Platform {
  
 -	pub fn web(&self) -> Option<String> {
 -		self.headless().map(|h| format!("{h}-web"))

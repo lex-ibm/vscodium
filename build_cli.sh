@@ -9,16 +9,16 @@ set -ex
 
 cd cli
 
-export CARGO_NET_GIT_FETCH_WITH_CLI="true"
-export VSCODE_CLI_APP_NAME="$( echo "${APP_NAME}" | awk '{print tolower($0)}' )"
-export VSCODE_CLI_BINARY_NAME="$( node -p "require(\"../product.json\").serverApplicationName" )"
-export VSCODE_CLI_UPDATE_ENDPOINT="https://raw.githubusercontent.com/VSCodium/versions/refs/heads/master"
+DOWNLOAD_URL_PREFIX="https://github.com/${ASSETS_REPOSITORY}/releases/download/\${release}/$( echo "${APP_NAME}" | awk '{print tolower($0)}' )"
 
-if [[ "${VSCODE_QUALITY}" == "insider" ]]; then
-  export VSCODE_CLI_DOWNLOAD_ENDPOINT="https://github.com/VSCodium/vscodium-insiders/releases"
-else
-  export VSCODE_CLI_DOWNLOAD_ENDPOINT="https://github.com/VSCodium/vscodium/releases"
-fi
+export CARGO_NET_GIT_FETCH_WITH_CLI="true"
+export VSCODE_CLI_BINARY_NAME="$( node -p "require(\"../product.json\").serverApplicationName" )"
+export VSCODE_CLI_CLI_DOWNLOAD_URL_TEMPLATE="${DOWNLOAD_URL_PREFIX}-cli-\${os}-\${arch}-\${release}.tar.gz"
+export VSCODE_CLI_COMMIT="${BUILD_SOURCEVERSION}"
+export VSCODE_CLI_RELEASE="${RELEASE_VERSION}"
+export VSCODE_CLI_SERVER_DOWNLOAD_URL_TEMPLATE="${DOWNLOAD_URL_PREFIX}-reh-\${os}-\${arch}-\${release}.tar.gz"
+export VSCODE_CLI_SERVER_WEB_DOWNLOAD_URL_TEMPLATE="${DOWNLOAD_URL_PREFIX}-reh-web-\${os}-\${arch}-\${release}.tar.gz"
+export VSCODE_CLI_UPDATE_ENDPOINT="https://raw.githubusercontent.com/VSCodium/versions/refs/heads/master"
 
 TUNNEL_APPLICATION_NAME="$( node -p "require(\"../product.json\").tunnelApplicationName" )"
 NAME_SHORT="$( node -p "require(\"../product.json\").nameShort" )"
@@ -63,15 +63,47 @@ elif [[ "${OS_NAME}" == "windows" ]]; then
 else
   export OPENSSL_LIB_DIR="$( pwd )/openssl/out/${VSCODE_ARCH}-linux/lib"
   export OPENSSL_INCLUDE_DIR="$( pwd )/openssl/out/${VSCODE_ARCH}-linux/include"
-  export VSCODE_SYSROOT_DIR="../.build/sysroots"
+  export VSCODE_SYSROOT_DIR="../.build/sysroots/cli"
 
-  if [[ "${VSCODE_ARCH}" == "arm64" ]]; then
+  if [[ "${OS_NAME}" == "alpine" ]]; then
+    export OPENSSL_LIB_DIR="$( pwd )/openssl/out/${VSCODE_ARCH}-linux-musl/lib"
+    export OPENSSL_INCLUDE_DIR="$( pwd )/openssl/out/${VSCODE_ARCH}-linux-musl/include"
+    export OPENSSL_STATIC=1
+
+    if [[ "${VSCODE_ARCH}" == "arm64" ]]; then
+      VSCODE_CLI_TARGET="aarch64-unknown-linux-musl"
+
+      if [[ "${CI_BUILD}" != "no" ]]; then
+        node -e 'import { getVSCodeSysroot } from "../build/linux/debian/install-sysroot.ts"; getVSCodeSysroot("arm64", true);'
+
+        export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER="$( pwd )/${VSCODE_SYSROOT_DIR}/output/bin/aarch64-linux-musl-gcc"
+        export CC_aarch64_unknown_linux_musl="$( pwd )/${VSCODE_SYSROOT_DIR}/output/bin/aarch64-linux-musl-gcc"
+        export CXX_aarch64_unknown_linux_musl="$( pwd )/${VSCODE_SYSROOT_DIR}/output/bin/aarch64-linux-musl-g++"
+      fi
+    elif [[ "${VSCODE_ARCH}" == "x64" ]]; then
+      VSCODE_CLI_TARGET="x86_64-unknown-linux-musl"
+    fi
+  elif [[ "${VSCODE_ARCH}" == "arm64" ]]; then
     VSCODE_CLI_TARGET="aarch64-unknown-linux-gnu"
 
     if [[ "${CI_BUILD}" != "no" ]]; then
       export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc
       export CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc
       export CXX_aarch64_unknown_linux_gnu=aarch64-linux-gnu-g++
+      export PKG_CONFIG_ALLOW_CROSS=1
+    fi
+  elif [[ "${VSCODE_ARCH}" == "armhf" ]]; then
+    VSCODE_CLI_TARGET="armv7-unknown-linux-gnueabihf"
+
+    export OPENSSL_LIB_DIR="$( pwd )/openssl/out/arm-linux/lib"
+    export OPENSSL_INCLUDE_DIR="$( pwd )/openssl/out/arm-linux/include"
+
+    if [[ "${CI_BUILD}" != "no" ]]; then
+      node -e 'import { getVSCodeSysroot } from "../build/linux/debian/install-sysroot.ts"; getVSCodeSysroot("armhf");'
+
+      export CARGO_TARGET_ARMV7_UNKNOWN_LINUX_GNUEABIHF_LINKER="$( pwd )/${VSCODE_SYSROOT_DIR}/arm-rpi-linux-gnueabihf/bin/arm-rpi-linux-gnueabihf-gcc"
+      export CC_armv7_unknown_linux_gnueabihf="$( pwd )/${VSCODE_SYSROOT_DIR}/arm-rpi-linux-gnueabihf/bin/arm-rpi-linux-gnueabihf-gcc"
+      export CXX_armv7_unknown_linux_gnueabihf="$( pwd )/${VSCODE_SYSROOT_DIR}/arm-rpi-linux-gnueabihf/bin/arm-rpi-linux-gnueabihf-g++"
       export PKG_CONFIG_ALLOW_CROSS=1
     fi
   elif [[ "${VSCODE_ARCH}" == "ppc64le" ]]; then

@@ -96,7 +96,7 @@ update vscode to [@@MS_TAG@@](@@MS_URL@@)
       <td><a href="https://github.com/@@ASSETS_REPOSITORY@@/releases/download/@@VERSION@@@@QUALITY@@/@@APP_NAME_LC@@-cli-linux-x64-@@VERSION@@@@QUALITY@@.tar.gz">@@APP_NAME_LC@@-cli-linux-x64-@@VERSION@@@@QUALITY@@.tar.gz</a></td>
    </tr>
    <tr>
-      <td rowspan="3">Alpine</td>
+      <td rowspan="4">Alpine</td>
       <td>AppImage</td>
       <td>Same AppImage as the Linux section above<br />
       <em>(Anylinux-AppImages are Alpine compatible)</em></td>
@@ -108,6 +108,10 @@ update vscode to [@@MS_TAG@@](@@MS_URL@@)
    <tr>
       <td>Web Host</td>
       <td><a href="https://github.com/@@ASSETS_REPOSITORY@@/releases/download/@@VERSION@@@@QUALITY@@/@@APP_NAME_LC@@-reh-web-alpine-x64-@@VERSION@@@@QUALITY@@.tar.gz">@@APP_NAME_LC@@-reh-web-alpine-x64-@@VERSION@@@@QUALITY@@.tar.gz</a></td>
+   </tr>
+   <tr>
+      <td>CLI</td>
+      <td><a href="https://github.com/@@ASSETS_REPOSITORY@@/releases/download/@@VERSION@@@@QUALITY@@/@@APP_NAME_LC@@-cli-alpine-x64-@@VERSION@@@@QUALITY@@.tar.gz">@@APP_NAME_LC@@-cli-alpine-x64-@@VERSION@@@@QUALITY@@.tar.gz</a></td>
    </tr>
 </table>
 
@@ -189,7 +193,7 @@ update vscode to [@@MS_TAG@@](@@MS_URL@@)
       <td><a href="https://github.com/@@ASSETS_REPOSITORY@@/releases/download/@@VERSION@@@@QUALITY@@/@@APP_NAME_LC@@-cli-linux-arm64-@@VERSION@@@@QUALITY@@.tar.gz">@@APP_NAME_LC@@-cli-linux-arm64-@@VERSION@@@@QUALITY@@.tar.gz</a></td>
    </tr>
    <tr>
-      <td rowspan="3">Alpine</td>
+      <td rowspan="4">Alpine</td>
       <td>AppImage</td>
       <td>Same AppImage as the Linux section above<br />
       <em>(Anylinux-AppImages are Alpine compatible)</em></td>
@@ -201,6 +205,10 @@ update vscode to [@@MS_TAG@@](@@MS_URL@@)
    <tr>
       <td>Web Host</td>
       <td><a href="https://github.com/@@ASSETS_REPOSITORY@@/releases/download/@@VERSION@@@@QUALITY@@/@@APP_NAME_LC@@-reh-web-alpine-arm64-@@VERSION@@@@QUALITY@@.tar.gz">@@APP_NAME_LC@@-reh-web-alpine-arm64-@@VERSION@@@@QUALITY@@.tar.gz</a></td>
+   </tr>
+   <tr>
+      <td>CLI</td>
+      <td><a href="https://github.com/@@ASSETS_REPOSITORY@@/releases/download/@@VERSION@@@@QUALITY@@/@@APP_NAME_LC@@-cli-alpine-arm64-@@VERSION@@@@QUALITY@@.tar.gz">@@APP_NAME_LC@@-cli-alpine-arm64-@@VERSION@@@@QUALITY@@.tar.gz</a></td>
    </tr>
 </table>
 
