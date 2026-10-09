@@ -1,6 +1,16 @@
 #!/usr/bin/env bash
 
-if [[ "${CHECK_ONLY_REH}" == "yes" ]]; then
+if [[ "${CHECK_ONLY_CLI}" == "yes" ]]; then
+
+  if [[ -z $( contains "${APP_NAME_LC}-cli-linux-${VSCODE_ARCH}-${RELEASE_VERSION}.tar.gz" ) ]]; then
+    echo "Building on Linux ${VSCODE_ARCH} because we have no CLI archive"
+    export SHOULD_BUILD="yes"
+  else
+    echo "Already have the Linux CLI ${VSCODE_ARCH} archive"
+    export SHOULD_BUILD_CLI="no"
+  fi
+
+elif [[ "${CHECK_ONLY_REH}" == "yes" ]]; then
 
   if [[ -z $( contains "${APP_NAME_LC}-reh-linux-${VSCODE_ARCH}-${RELEASE_VERSION}.tar.gz" ) ]]; then
     echo "Building on Linux ${VSCODE_ARCH} because we have no REH archive"
@@ -122,13 +132,7 @@ else
     fi
 
     export SHOULD_BUILD_APPIMAGE="no"
-
-    if [[ -z $( contains "${APP_NAME_LC}-cli-linux-armhf-${RELEASE_VERSION}.tar.gz" ) ]]; then
-      echo "Building on Linux arm because we have no CLI archive"
-      export SHOULD_BUILD="yes"
-    else
-      export SHOULD_BUILD_CLI="no"
-    fi
+    export SHOULD_BUILD_CLI="no"
 
 
     if [[ "${SHOULD_BUILD}" != "yes" ]]; then
@@ -175,12 +179,7 @@ else
       export SHOULD_BUILD_REH_WEB="no"
     fi
 
-    if [[ -z $( contains "${APP_NAME_LC}-cli-linux-ppc64le-${RELEASE_VERSION}.tar.gz" ) ]]; then
-      echo "Building on Linux PowerPC64LE because we have no CLI archive"
-      export SHOULD_BUILD="yes"
-    else
-      export SHOULD_BUILD_CLI="no"
-    fi
+    export SHOULD_BUILD_CLI="no"
 
     if [[ "${SHOULD_BUILD}" != "yes" ]]; then
       echo "Already have all the Linux PowerPC64LE builds"

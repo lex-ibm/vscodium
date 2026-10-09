@@ -40,5 +40,6 @@
    - [Linux](https://github.com/VSCodium/vscodium/blob/master/docs/troubleshooting.md#linux)
 - [Other Resources](https://github.com/VSCodium/vscodium/blob/master/docs/others.md)
    - [What are reh and reh-web archives?](https://github.com/VSCodium/vscodium/blob/master/docs/others.md#reh)
+   - [Where does the CLI download the server from?](https://github.com/VSCodium/vscodium/blob/master/docs/others.md#download-url-templates)
 - [Contributing Guidelines](https://github.com/VSCodium/vscodium/blob/master/CONTRIBUTING.md)
 - [Building VSCodium](https://github.com/VSCodium/vscodium/blob/master/docs/howto-build.md)

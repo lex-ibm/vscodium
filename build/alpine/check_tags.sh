@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 
-if [[ "${CHECK_ONLY_REH}" == "yes" ]]; then
+if [[ "${CHECK_ONLY_CLI}" == "yes" ]]; then
+  if [[ -z $( contains "${APP_NAME_LC}-cli-alpine-${VSCODE_ARCH}-${RELEASE_VERSION}.tar.gz" ) ]]; then
+    echo "Building on Alpine ${VSCODE_ARCH} because we have no CLI archive"
+    export SHOULD_BUILD="yes"
+  else
+    echo "Already have the Alpine CLI ${VSCODE_ARCH} archive"
+    export SHOULD_BUILD_CLI="no"
+  fi
+elif [[ "${CHECK_ONLY_REH}" == "yes" ]]; then
   if [[ -z $( contains "${APP_NAME_LC}-reh-alpine-${VSCODE_ARCH}-${RELEASE_VERSION}.tar.gz" ) ]]; then
     echo "Building on Alpine ${VSCODE_ARCH} because we have no REH archive"
     export SHOULD_BUILD="yes"
@@ -33,6 +41,13 @@ else
     else
       export SHOULD_BUILD_REH_WEB="no"
     fi
+
+    if [[ -z $( contains "${APP_NAME_LC}-cli-alpine-arm64-${RELEASE_VERSION}.tar.gz" ) ]]; then
+      echo "Building on Alpine arm64 because we have no CLI archive"
+      export SHOULD_BUILD="yes"
+    else
+      export SHOULD_BUILD_CLI="no"
+    fi
   fi
 
   # alpine-x64
@@ -49,6 +64,13 @@ else
       export SHOULD_BUILD="yes"
     else
       export SHOULD_BUILD_REH_WEB="no"
+    fi
+
+    if [[ -z $( contains "${APP_NAME_LC}-cli-alpine-x64-${RELEASE_VERSION}.tar.gz" ) ]]; then
+      echo "Building on Alpine x64 because we have no CLI archive"
+      export SHOULD_BUILD="yes"
+    else
+      export SHOULD_BUILD_CLI="no"
     fi
   fi
 fi

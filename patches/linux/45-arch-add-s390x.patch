@@ -268,6 +268,45 @@ index d94537e..3834b94 100644
 -	return ['x86_64', 'armv7hl', 'aarch64', 'ppc64le', 'riscv64'].includes(s);
 +	return ['x86_64', 'armv7hl', 'aarch64', 'ppc64le', 'riscv64', 's390x'].includes(s);
  }
+diff --git a/cli/src/update_service.rs b/cli/src/update_service.rs
+index 8e46fa0..52eab7d 100644
+--- a/cli/src/update_service.rs
++++ b/cli/src/update_service.rs
+@@ -305,2 +305,3 @@ pub enum Platform {
+ 	LinuxLoong64,
++	LinuxS390X,
+ 	DarwinX64,
+@@ -326,2 +327,3 @@ impl Platform {
+ 			Platform::LinuxLoong64 => "loong64",
++			Platform::LinuxS390X => "s390x",
+ 			Platform::DarwinX64 => "x64",
+@@ -348,2 +350,3 @@ impl Platform {
+ 			Platform::LinuxLoong64 => "linux",
++			Platform::LinuxS390X => "linux",
+ 			Platform::DarwinX64 => "darwin",
+@@ -382,2 +385,4 @@ impl Platform {
+ 			Some(Platform::LinuxLoong64)
++		} else if cfg!(all(target_os = "linux", target_arch = "s390x")) {
++			Some(Platform::LinuxS390X)
+ 		} else if cfg!(all(target_os = "macos", target_arch = "x86_64")) {
+@@ -412,2 +417,3 @@ impl fmt::Display for Platform {
+ 			Platform::LinuxLoong64 => "LinuxLoong64",
++			Platform::LinuxS390X => "LinuxS390X",
+ 			Platform::DarwinX64 => "DarwinX64",
+diff --git a/cli/src/util/prereqs.rs b/cli/src/util/prereqs.rs
+index 27c1d3d..43dda5f 100644
+--- a/cli/src/util/prereqs.rs
++++ b/cli/src/util/prereqs.rs
+@@ -89,2 +89,4 @@ impl PreReqChecker {
+ 					Platform::LinuxLoong64
++				} else if cfg!(target_arch = "s390x") {
++					Platform::LinuxS390X
+ 				} else {
+@@ -216,2 +218,4 @@ async fn check_glibcxx_version() -> Result<bool, String> {
+ 	const DEFAULT_LIB_PATH: &str = "/usr/lib64/libstdc++.so.6";
++	#[cfg(target_arch = "s390x")]
++	const DEFAULT_LIB_PATH: &str = "/usr/lib64/libstdc++.so.6";
+ 	#[cfg(any(target_arch = "x86", target_arch = "arm"))]
 diff --git a/resources/server/bin/helpers/check-requirements-linux.sh b/resources/server/bin/helpers/check-requirements-linux.sh
 index dc9faac..9078cc9 100644
 --- a/resources/server/bin/helpers/check-requirements-linux.sh
