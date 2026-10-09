@@ -116,6 +116,7 @@ else
       export OPENSSL_INCLUDE_DIR="$( pwd )/${VSCODE_SYSROOT_DIR}/powerpc64le-linux-gnu/powerpc64le-linux-gnu/sysroot/usr/include"
       export OPENSSL_STATIC=1
       export CARGO_TARGET_POWERPC64LE_UNKNOWN_LINUX_GNU_LINKER="$( pwd )/${VSCODE_SYSROOT_DIR}/powerpc64le-linux-gnu/bin/powerpc64le-linux-gnu-gcc"
+      export CFLAGS_powerpc64le_unknown_linux_gnu="-I$( pwd )/${VSCODE_SYSROOT_DIR}/powerpc64le-linux-gnu/powerpc64le-linux-gnu/sysroot/usr/include/powerpc64le-linux-gnu"
       export CC_powerpc64le_unknown_linux_gnu="$( pwd )/${VSCODE_SYSROOT_DIR}/powerpc64le-linux-gnu/bin/powerpc64le-linux-gnu-gcc"
       export CXX_powerpc64le_unknown_linux_gnu="$( pwd )/${VSCODE_SYSROOT_DIR}/powerpc64le-linux-gnu/bin/powerpc64le-linux-gnu-g++"
       export PKG_CONFIG_ALLOW_CROSS=1
@@ -135,6 +136,7 @@ else
       export OPENSSL_INCLUDE_DIR="$( pwd )/${VSCODE_SYSROOT_DIR}/s390x-linux-gnu/s390x-linux-gnu/sysroot/usr/include"
       export OPENSSL_STATIC=1
       export CARGO_TARGET_S390X_UNKNOWN_LINUX_GNU_LINKER="$( pwd )/${VSCODE_SYSROOT_DIR}/s390x-linux-gnu/bin/s390x-linux-gnu-gcc"
+      export CFLAGS_s390x_unknown_linux_gnu="-I$( pwd )/${VSCODE_SYSROOT_DIR}/s390x-linux-gnu/s390x-linux-gnu/sysroot/usr/include/s390x-linux-gnu"
       export CC_s390x_unknown_linux_gnu="$( pwd )/${VSCODE_SYSROOT_DIR}/s390x-linux-gnu/bin/s390x-linux-gnu-gcc"
       export CXX_s390x_unknown_linux_gnu="$( pwd )/${VSCODE_SYSROOT_DIR}/s390x-linux-gnu/bin/s390x-linux-gnu-g++"
       export PKG_CONFIG_ALLOW_CROSS=1
